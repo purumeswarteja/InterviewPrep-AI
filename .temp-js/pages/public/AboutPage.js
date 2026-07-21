@@ -1,0 +1,13 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { Target, TrendingUp, Heart, Globe } from 'lucide-react';
+import PublicNavbar from '../../components/layout/PublicNavbar';
+import Footer from '../../components/layout/Footer';
+const values = [
+    { icon: Target, title: 'Mission-Driven', desc: 'We exist to democratize access to top-tier interview preparation for everyone, everywhere.' },
+    { icon: Heart, title: 'User-First', desc: 'Every feature we build starts with the question: "Does this genuinely help our users?"' },
+    { icon: TrendingUp, title: 'Continuous Improvement', desc: 'We constantly refine our AI models and content based on real user outcomes and feedback.' },
+    { icon: Globe, title: 'Accessible to All', desc: 'Great interview prep shouldn\'t cost thousands. We make it accessible regardless of background.' },
+];
+export default function AboutPage() {
+    return (_jsxs("div", { className: "min-h-screen bg-ink-50", children: [_jsx(PublicNavbar, {}), _jsxs("section", { className: "pt-32 pb-16 bg-white relative overflow-hidden", children: [_jsx("div", { className: "absolute inset-0 mesh-bg opacity-50" }), _jsxs("div", { className: "relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center", children: [_jsx("span", { className: "text-sm font-semibold text-brand-600 uppercase tracking-wider", children: "About Us" }), _jsxs("h1", { className: "font-display font-bold text-4xl sm:text-5xl text-ink-950 mt-2 leading-tight", children: ["We're on a mission to help you", _jsx("br", {}), "land your dream job."] }), _jsx("p", { className: "mt-6 text-lg text-ink-600 leading-relaxed max-w-2xl mx-auto", children: "InterPrep AI was born from a simple observation: talented people fail interviews not because they lack skills, but because they lack preparation. We're changing that." })] })] }), _jsx("section", { className: "py-16 bg-white", children: _jsxs("div", { className: "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8", children: [_jsx("h2", { className: "font-display font-bold text-3xl text-ink-950 text-center mb-12", children: "Our Values" }), _jsx("div", { className: "grid md:grid-cols-2 lg:grid-cols-4 gap-6", children: values.map((v) => (_jsxs("div", { className: "card-surface p-6", children: [_jsx("div", { className: "w-12 h-12 rounded-xl bg-gradient-to-br from-brand-500 to-sky-500 flex items-center justify-center mb-4", children: _jsx(v.icon, { className: "w-6 h-6 text-white" }) }), _jsx("h3", { className: "font-display font-semibold text-lg text-ink-900", children: v.title }), _jsx("p", { className: "text-sm text-ink-500 mt-2 leading-relaxed", children: v.desc })] }, v.title))) })] }) }), _jsx(Footer, {})] }));
+}

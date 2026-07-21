@@ -1,0 +1,181 @@
+import { jsx, jsxs } from "react/jsx-runtime";
+import { Link, NavLink, useNavigate, Outlet } from "react-router-dom";
+import { useState } from "react";
+import {
+  Brain,
+  LayoutDashboard,
+  Mic,
+  FileText,
+  History,
+  BarChart3,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  Bell,
+  ChevronDown,
+  User as UserIcon,
+  Flame
+} from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { cn, getInitials } from "../../lib/utils";
+const navItems = [
+  { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/app/mock-interview", label: "AI Mock Interview", icon: Brain },
+  { to: "/app/hr-interview", label: "HR Interview", icon: Mic },
+  { to: "/app/voice-interview", label: "Voice Interview", icon: Mic },
+  { to: "/app/resume-analyzer", label: "Resume Analyzer", icon: FileText },
+  { to: "/app/history", label: "History", icon: History },
+  { to: "/app/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/app/settings", label: "Settings", icon: Settings }
+];
+function AppLayout() {
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [bellOpen, setBellOpen] = useState(false);
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+  return /* @__PURE__ */ jsxs("div", { className: "min-h-screen bg-ink-50 flex", children: [
+    /* @__PURE__ */ jsxs(
+      "aside",
+      {
+        className: cn(
+          "fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-ink-900 text-white flex flex-col transition-transform duration-300",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        ),
+        children: [
+          /* @__PURE__ */ jsx("div", { className: "p-5 border-b border-white/10", children: /* @__PURE__ */ jsxs(Link, { to: "/", className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx("div", { className: "w-9 h-9 rounded-xl bg-gradient-to-br from-brand-400 to-sky-400 flex items-center justify-center shadow-glow", children: /* @__PURE__ */ jsx(Brain, { className: "w-5 h-5 text-white" }) }),
+            /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsx("span", { className: "font-display font-bold text-lg", children: "InterPrep AI" }) })
+          ] }) }),
+          /* @__PURE__ */ jsx("nav", { className: "flex-1 overflow-y-auto py-4 px-3 scrollbar-thin", children: navItems.map((item) => /* @__PURE__ */ jsxs(
+            NavLink,
+            {
+              to: item.to,
+              onClick: () => setSidebarOpen(false),
+              className: ({ isActive }) => cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all mb-1",
+                isActive ? "bg-gradient-to-r from-brand-500/20 to-transparent text-white border-l-2 border-brand-400" : "text-ink-300 hover:bg-white/5 hover:text-white"
+              ),
+              children: [
+                /* @__PURE__ */ jsx(item.icon, { className: "w-[18px] h-[18px]" }),
+                item.label
+              ]
+            },
+            item.to
+          )) }),
+          /* @__PURE__ */ jsx("div", { className: "p-3 border-t border-white/10", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3 p-2 rounded-xl bg-white/5", children: [
+            /* @__PURE__ */ jsx("div", { className: "w-9 h-9 rounded-lg bg-gradient-to-br from-brand-400 to-sky-500 flex items-center justify-center text-sm font-semibold", children: getInitials(profile?.full_name || user?.email) }),
+            /* @__PURE__ */ jsxs("div", { className: "flex-1 min-w-0", children: [
+              /* @__PURE__ */ jsx("p", { className: "text-sm font-medium truncate", children: profile?.full_name || "User" }),
+              /* @__PURE__ */ jsx("p", { className: "text-xs text-ink-400 truncate", children: user?.email })
+            ] }),
+            /* @__PURE__ */ jsx("button", { onClick: handleSignOut, className: "text-ink-400 hover:text-white transition-colors", children: /* @__PURE__ */ jsx(LogOut, { className: "w-4 h-4" }) })
+          ] }) })
+        ]
+      }
+    ),
+    sidebarOpen && /* @__PURE__ */ jsx(
+      "div",
+      {
+        className: "fixed inset-0 bg-ink-900/50 z-30 lg:hidden",
+        onClick: () => setSidebarOpen(false)
+      }
+    ),
+    /* @__PURE__ */ jsxs("div", { className: "flex-1 min-w-0 flex flex-col", children: [
+      /* @__PURE__ */ jsx("header", { className: "sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-ink-200", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between px-4 lg:px-8 py-3.5", children: [
+        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
+          /* @__PURE__ */ jsx(
+            "button",
+            {
+              onClick: () => setSidebarOpen(!sidebarOpen),
+              className: "lg:hidden p-2 rounded-lg hover:bg-ink-100",
+              children: sidebarOpen ? /* @__PURE__ */ jsx(X, { className: "w-5 h-5" }) : /* @__PURE__ */ jsx(Menu, { className: "w-5 h-5" })
+            }
+          ),
+          profile?.streak_count ? /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-50 text-accent-700 text-sm font-medium", children: [
+            /* @__PURE__ */ jsx(Flame, { className: "w-4 h-4" }),
+            profile.streak_count,
+            " day streak"
+          ] }) : null
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
+          /* @__PURE__ */ jsxs("div", { className: "relative", children: [
+            /* @__PURE__ */ jsxs(
+              "button",
+              {
+                onClick: () => setBellOpen(!bellOpen),
+                className: "relative p-2 rounded-lg hover:bg-ink-100 transition-colors",
+                "aria-label": "Notifications",
+                children: [
+                  /* @__PURE__ */ jsx(Bell, { className: "w-5 h-5 text-ink-600" }),
+                  /* @__PURE__ */ jsx("span", { className: "absolute top-1 right-1 w-2 h-2 rounded-full bg-accent-500" })
+                ]
+              }
+            ),
+            bellOpen && /* @__PURE__ */ jsxs(
+              "div",
+              {
+                className: "absolute right-0 mt-2 w-80 card-surface overflow-hidden animate-fade-down",
+                onMouseLeave: () => setBellOpen(false),
+                children: [
+                  /* @__PURE__ */ jsxs("div", { className: "px-4 py-3 border-b border-ink-100 flex items-center justify-between", children: [
+                    /* @__PURE__ */ jsx("span", { className: "font-semibold text-sm text-ink-900", children: "Notifications" }),
+                    /* @__PURE__ */ jsx("button", { onClick: () => setBellOpen(false), className: "text-xs text-brand-600 hover:text-brand-700 font-medium", children: "Dismiss" })
+                  ] }),
+                  /* @__PURE__ */ jsxs("div", { className: "p-6 text-center", children: [
+                    /* @__PURE__ */ jsx("div", { className: "w-12 h-12 rounded-2xl bg-ink-100 flex items-center justify-center mx-auto mb-3", children: /* @__PURE__ */ jsx(Bell, { className: "w-6 h-6 text-ink-400" }) }),
+                    /* @__PURE__ */ jsx("p", { className: "text-sm font-medium text-ink-900", children: "You're all caught up!" }),
+                    /* @__PURE__ */ jsx("p", { className: "text-xs text-ink-500 mt-1", children: "No new notifications right now." })
+                  ] })
+                ]
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxs("div", { className: "relative", children: [
+            /* @__PURE__ */ jsxs(
+              "button",
+              {
+                onClick: () => setUserMenuOpen(!userMenuOpen),
+                className: "flex items-center gap-2 p-1.5 pr-2 rounded-xl hover:bg-ink-100",
+                children: [
+                  /* @__PURE__ */ jsx("div", { className: "w-8 h-8 rounded-lg bg-gradient-to-br from-brand-400 to-sky-500 flex items-center justify-center text-xs font-semibold text-white", children: getInitials(profile?.full_name || user?.email) }),
+                  /* @__PURE__ */ jsx(ChevronDown, { className: "w-4 h-4 text-ink-500" })
+                ]
+              }
+            ),
+            userMenuOpen && /* @__PURE__ */ jsxs(
+              "div",
+              {
+                className: "absolute right-0 mt-2 w-56 card-surface overflow-hidden",
+                onMouseLeave: () => setUserMenuOpen(false),
+                children: [
+                  /* @__PURE__ */ jsxs(Link, { to: "/app/profile", onClick: () => setUserMenuOpen(false), className: "flex items-center gap-3 px-4 py-3 hover:bg-ink-50 text-sm", children: [
+                    /* @__PURE__ */ jsx(UserIcon, { className: "w-4 h-4 text-ink-500" }),
+                    "View Profile"
+                  ] }),
+                  /* @__PURE__ */ jsxs(Link, { to: "/app/settings", onClick: () => setUserMenuOpen(false), className: "flex items-center gap-3 px-4 py-3 hover:bg-ink-50 text-sm", children: [
+                    /* @__PURE__ */ jsx(Settings, { className: "w-4 h-4 text-ink-500" }),
+                    "Settings"
+                  ] }),
+                  /* @__PURE__ */ jsxs("button", { onClick: handleSignOut, className: "w-full flex items-center gap-3 px-4 py-3 hover:bg-ink-50 text-sm text-red-600 border-t border-ink-100", children: [
+                    /* @__PURE__ */ jsx(LogOut, { className: "w-4 h-4" }),
+                    "Sign Out"
+                  ] })
+                ]
+              }
+            )
+          ] })
+        ] })
+      ] }) }),
+      /* @__PURE__ */ jsx("main", { className: "flex-1 p-6 lg:p-12 overflow-x-hidden", children: /* @__PURE__ */ jsx(Outlet, {}) })
+    ] })
+  ] });
+}
+export {
+  AppLayout as default
+};
