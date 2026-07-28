@@ -90,11 +90,15 @@ const technicalTopics = [
   { id: "javascript", name: "JavaScript", icon: "Code" },
   { id: "react", name: "React", icon: "Atom" },
   { id: "python", name: "Python", icon: "Terminal" },
+  { id: "java", name: "Java", icon: "Code" },
+  { id: "cpp", name: "C++", icon: "Terminal" },
   { id: "sql", name: "SQL & Databases", icon: "Database" },
   { id: "data-structures", name: "Data Structures", icon: "Box" },
   { id: "algorithms", name: "Algorithms", icon: "GitBranch" },
   { id: "system-design", name: "System Design", icon: "Network" },
-  { id: "cloud", name: "Cloud & DevOps", icon: "Cloud" }
+  { id: "cloud", name: "Cloud & DevOps", icon: "Cloud" },
+  { id: "web-security", name: "Web Security", icon: "Shield" },
+  { id: "machine-learning", name: "Machine Learning", icon: "Brain" }
 ];
 
 const difficultyLevels = [
@@ -139,7 +143,7 @@ const mockQuestionBank = {
       q: "Explain the difference between == and ===.",
       a: "`==` compares with type coercion (`5 == '5'` is true); `===` compares value and type without coercion (`5 === '5'` is false). Prefer `===` to avoid surprise conversions. Note `NaN !== NaN` (use `Number.isNaN`).",
       difficulty: "easy",
-      keywords: ["==", "===" , "loose", "strict", "coercion", "type", "value", "null", "undefined", "NaN"]
+      keywords: ["==", "===", "loose", "strict", "coercion", "type", "value", "null", "undefined", "NaN"]
     },
     {
       q: "What are arrow functions and how do they differ from regular functions?",
@@ -176,6 +180,24 @@ const mockQuestionBank = {
       a: "Strategies: code-splitting (dynamic imports), tree-shaking, remove unused dependencies, lazy-load routes/images, use smaller libraries, compress assets, and precompute heavy code. Analyze with bundle analyzers.",
       difficulty: "hard",
       keywords: ["code-splitting", "tree-shaking", "lazy-load", "bundle", "compress", "analyzer"]
+    },
+    {
+      q: "What is the difference between Map and WeakMap in JavaScript?",
+      a: "Map holds key-value pairs with keys of any type and prevents garbage collection of keys. WeakMap only allows object keys, holds them weakly (allowing GC if no other reference exists), and is not enumerable. Useful for private data storage.",
+      difficulty: "hard",
+      keywords: ["map", "weakmap", "garbage collection", "keys", "objects", "enumerable", "memory"]
+    },
+    {
+      q: "Explain Generator functions and the yield keyword.",
+      a: "Generators are functions that can be paused and resumed using `function*` syntax and `yield`. Calling a generator returns an iterator object with a `.next()` method that yields `{ value, done }` objects.",
+      difficulty: "medium",
+      keywords: ["generator", "yield", "next", "iterator", "pause", "resume", "iterable"]
+    },
+    {
+      q: "What are Web Workers and when should you use them?",
+      a: "Web Workers run scripts in background threads separate from the main execution thread. They are used to execute heavy computations without freezing or blocking the user interface (UI thread).",
+      difficulty: "hard",
+      keywords: ["web worker", "background thread", "ui thread", "concurrency", "performance", "multithreading"]
     }
   ],
   react: [
@@ -228,16 +250,28 @@ const mockQuestionBank = {
       keywords: ["memo", "useMemo", "useCallback", "React.memo", "virtualization", "code splitting", "lazy", "key", "profiler", "performance", "debounce"]
     },
     {
-      q: "Explain React reconciliation and how keys affect list rendering.",
-      a: "Reconciliation diffs the new and old VDOM; keys help React match elements in a list so it can reorder instead of destroying/creating. Stable keys minimize DOM churn. Avoid index keys when ordering changes to prevent unexpected remounts.",
-      difficulty: "medium",
-      keywords: ["reconciliation", "keys", "list", "render", "stability", "remount", "performance"]
-    },
-    {
       q: "What's the difference between controlled and uncontrolled components?",
       a: "Controlled components have their value controlled by React state (`value` + `onChange`), while uncontrolled components rely on the DOM (`defaultValue` or refs). Controlled forms simplify validation and state sync; uncontrolled can be simpler for basic inputs.",
       difficulty: "medium",
       keywords: ["controlled", "uncontrolled", "ref", "value", "defaultValue", "form", "validation"]
+    },
+    {
+      q: "Explain React Server Components (RSC) and how they differ from Client Components.",
+      a: "React Server Components run exclusively on the server, producing zero client bundle overhead and enabling direct database access. Client components run in browser DOM and handle interactivity, state, and browser APIs.",
+      difficulty: "hard",
+      keywords: ["server components", "rsc", "client components", "bundle size", "ssr", "next.js", "hydration"]
+    },
+    {
+      q: "How does useImperativeHandle work with forwardRef?",
+      a: "`useImperativeHandle` customizes the ref value exposed by a parent component when using `forwardRef`. It limits which inner DOM methods or custom functions the parent can trigger.",
+      difficulty: "hard",
+      keywords: ["useImperativeHandle", "forwardRef", "ref", "parent", "child", "dom"]
+    },
+    {
+      q: "What is Error Boundary in React and how is it implemented?",
+      a: "Error Boundaries are React components that catch JavaScript errors anywhere in their child component tree, log those errors, and display a fallback UI instead of crashing the whole app. Implemented via class methods `getDerivedStateFromError` or `componentDidCatch`.",
+      difficulty: "medium",
+      keywords: ["error boundary", "fallback ui", "crash", "componentDidCatch", "catch", "exception"]
     }
   ],
   python: [
@@ -272,12 +306,6 @@ const mockQuestionBank = {
       keywords: ["generator", "yield", "lazy", "iterator", "memory", "pipeline", "itertools"]
     },
     {
-      q: "How do generators differ from regular functions?",
-      a: "Generators use `yield` to produce values lazily, suspending between yields and keeping their state. `next()` resumes until the next yield. This makes them memory-efficient for large or infinite sequences. Generator expressions `(x for x in ...)` are a concise form.",
-      difficulty: "easy",
-      keywords: ["generator", "yield", "lazy", "iterator", "next", "suspend", "state", "memory", "infinite", "yield from"]
-    },
-    {
       q: "What is the difference between deep and shallow copy?",
       a: "A shallow copy duplicates the top object but shares nested references, so mutating a nested mutable affects both. A deep copy recursively clones everything, making fully independent copies. Use `copy.copy()` and `copy.deepcopy()`; slicing a list makes a shallow copy.",
       difficulty: "medium",
@@ -288,6 +316,24 @@ const mockQuestionBank = {
       a: "A list comprehension builds a list in one expression: `[expression for item in iterable if condition]`. Example: `[x**2 for x in range(10) if x % 2 == 0]` gives `[0,4,16,36,64]`. They're faster than loops and also work for sets, dicts, and generators.",
       difficulty: "easy",
       keywords: ["list comprehension", "expression", "iterable", "condition", "syntax", "concise", "generator", "set", "dict", "performance"]
+    },
+    {
+      q: "What are *args and **kwargs in Python function definitions?",
+      a: "`*args` allows a function to accept any number of positional arguments as a tuple, while `**kwargs` accepts any number of keyword arguments as a dictionary. Useful for wrapper functions and dynamic argument handling.",
+      difficulty: "easy",
+      keywords: ["*args", "**kwargs", "arguments", "positional", "keyword", "tuple", "dictionary", "flexibility"]
+    },
+    {
+      q: "Explain asyncio and event loops in Python.",
+      a: "`asyncio` provides asynchronous I/O primitives using `async/await` syntax and an event loop that coordinates concurrent tasks without multi-threading overhead.",
+      difficulty: "hard",
+      keywords: ["asyncio", "async", "await", "event loop", "coroutine", "concurrency", "io-bound"]
+    },
+    {
+      q: "What is dunder (double underscore) methods in Python? Give examples.",
+      a: "Dunder methods (like `__init__`, `__str__`, `__len__`, `__repr__`) customize special behavior in classes, such as object initialization, string representation, operator overloading, and length calculation.",
+      difficulty: "medium",
+      keywords: ["dunder", "magic methods", "__init__", "__str__", "__len__", "operator overloading", "class"]
     }
   ],
   sql: [
@@ -326,6 +372,24 @@ const mockQuestionBank = {
       a: "Options: `SELECT MAX(salary) FROM employees WHERE salary < (SELECT MAX(salary) FROM employees);`, or `ORDER BY salary DESC LIMIT 1 OFFSET 1;`, or use `DENSE_RANK() OVER (ORDER BY salary DESC)` and filter `rnk = 2` to handle ties.",
       difficulty: "medium",
       keywords: ["second highest", "subquery", "max", "limit", "offset", "order by", "dense_rank", "window", "distinct", "salary"]
+    },
+    {
+      q: "Explain ACID properties in relational databases.",
+      a: "Atomicity (all operations succeed or roll back), Consistency (data satisfies constraints), Isolation (concurrent transactions don't interfere), and Durability (committed changes persist even during crash).",
+      difficulty: "medium",
+      keywords: ["acid", "atomicity", "consistency", "isolation", "durability", "transactions", "rollback", "commit"]
+    },
+    {
+      q: "What are window functions in SQL and how do they differ from GROUP BY?",
+      a: "Window functions (like `ROW_NUMBER()`, `RANK()`, `SUM() OVER (...)`) compute aggregate values over a partition of rows while preserving individual row identity, whereas `GROUP BY` collapses rows into single summaries.",
+      difficulty: "hard",
+      keywords: ["window function", "over", "partition by", "rank", "dense_rank", "lead", "lag", "row_number"]
+    },
+    {
+      q: "What is database deadlock and how can it be prevented?",
+      a: "A deadlock occurs when two transactions hold locks on separate resources and each waits for the other to release theirs. Prevented by locking resources in a consistent order, using lower isolation levels, or setting lock timeouts.",
+      difficulty: "hard",
+      keywords: ["deadlock", "locks", "transaction", "resource", "blocking", "isolation", "concurrency"]
     }
   ],
   "data-structures": [
@@ -364,6 +428,18 @@ const mockQuestionBank = {
       a: "A binary heap is a complete tree with the heap property (min-heap: parent ≤ children). Insert and extract-min/max are O(log n) (sift up/down); peek is O(1); building from an array is O(n). Heaps power priority queues and heapsort. Store in an array: children of i are 2i+1, 2i+2.",
       difficulty: "medium",
       keywords: ["heap", "binary", "insert", "extract", "peek", "log n", "sift", "heapify", "priority queue", "complete tree"]
+    },
+    {
+      q: "What is a Trie and when is it preferred over a Hash Table?",
+      a: "A Trie (prefix tree) stores string characters along tree branches. It enables O(L) retrieval where L is word length and facilitates fast prefix search and auto-complete suggestions.",
+      difficulty: "hard",
+      keywords: ["trie", "prefix tree", "autocomplete", "string lookup", "branch", "prefix"]
+    },
+    {
+      q: "Explain LRU Cache implementation using Data Structures.",
+      a: "An LRU (Least Recently Used) cache is implemented using a Hash Map combined with a Doubly Linked List to achieve O(1) get and put operations.",
+      difficulty: "hard",
+      keywords: ["lru cache", "hash map", "doubly linked list", "eviction", "o(1)"]
     }
   ],
   algorithms: [
@@ -402,6 +478,18 @@ const mockQuestionBank = {
       a: "Merge sort recursively splits the array into halves, then merges the sorted halves back. O(n log n) in all cases and stable, but uses O(n) extra space for merging. Preferred when stability matters or for linked lists and external sorting.",
       difficulty: "medium",
       keywords: ["merge sort", "divide", "conquer", "split", "merge", "sorted", "o(n log n)", "stable", "auxiliary", "external sort"]
+    },
+    {
+      q: "Explain Dijkstra's algorithm for shortest paths.",
+      a: "Dijkstra's algorithm finds the shortest path from a single source vertex to all other vertices in a graph with non-negative edge weights using a Min-Priority Queue in O((V + E) log V) time.",
+      difficulty: "hard",
+      keywords: ["dijkstra", "shortest path", "min heap", "priority queue", "weighted graph", "greedy"]
+    },
+    {
+      q: "What is Topological Sort and when is it applicable?",
+      a: "Topological Sort orders vertices of a Directed Acyclic Graph (DAG) such that for every directed edge u -> v, u comes before v. Used in build systems (like Make/npm) and task scheduling.",
+      difficulty: "medium",
+      keywords: ["topological sort", "dag", "indegree", "kahn's algorithm", "dependencies", "directed acyclic graph"]
     }
   ],
   "system-design": [
@@ -440,6 +528,12 @@ const mockQuestionBank = {
       a: "Like S3: store immutable objects under a key, with PUT/GET/DELETE on /bucket/key. Split large files into chunks replicated 3x (or erasure coded) across nodes; a metadata service maps keys to locations. Add a CDN for hot reads, multipart upload, versioning, and lifecycle tiering.",
       difficulty: "medium",
       keywords: ["file storage", "object", "bucket", "metadata", "chunk", "replication", "erasure", "cdn", "multipart", "versioning"]
+    },
+    {
+      q: "Design a Video Streaming Platform like Netflix or YouTube.",
+      a: "Store original video in S3, use an async processing worker pipeline to transcode into multiple resolutions (1080p, 4K) and formats (HLS/DASH). Serve content via global CDNs and cache user watch progress in Redis.",
+      difficulty: "hard",
+      keywords: ["video streaming", "transcoding", "hls", "dash", "cdn", "s3", "blob", "chunks"]
     }
   ],
   cloud: [
@@ -478,6 +572,146 @@ const mockQuestionBank = {
       a: "Vertical scaling adds resources to one machine (CPU/RAM) — simple but capped and often needs downtime. Horizontal scaling adds machines — near-unlimited and no downtime, but requires stateless apps and adds load balancing and consistency complexity. Stateless services scale out easily.",
       difficulty: "medium",
       keywords: ["horizontal", "vertical", "scaling", "scale up", "scale out", "instance", "stateless", "load balancer", "sharding", "auto-scaling"]
+    },
+    {
+      q: "What is Kubernetes and what problem does it solve?",
+      a: "Kubernetes is an open-source container orchestration system that automates deployment, scaling, load balancing, service discovery, self-healing, and rolling updates for containerized applications across node clusters.",
+      difficulty: "hard",
+      keywords: ["kubernetes", "k8s", "orchestration", "pods", "services", "deployments", "auto-scaling", "self-healing"]
+    }
+  ],
+  java: [
+    {
+      q: "Explain the difference between HashMap, Hashtable, and ConcurrentHashMap in Java.",
+      a: "HashMap is unsynchronized, allows null key/values, and is not thread-safe. Hashtable is synchronized and legacy (disallows nulls). ConcurrentHashMap achieves thread-safety using fine-grained segment/bucket locking without locking the whole map, delivering much higher throughput under concurrency.",
+      difficulty: "medium",
+      keywords: ["hashmap", "hashtable", "concurrenthashmap", "synchronized", "thread-safe", "null", "bucket", "locking", "concurrency", "performance"]
+    },
+    {
+      q: "What is Garbage Collection in Java and how do different collectors work?",
+      a: "Java Garbage Collection (GC) automatically frees heap memory allocated to unreferenced objects using a generational hypothesis (Young, Old, Permanent/Metaspace). Collectors like G1 GC divide memory into regions and prioritize collecting regions with the most garbage for low latency.",
+      difficulty: "hard",
+      keywords: ["garbage collection", "gc", "heap", "g1 gc", "young generation", "old generation", "metaspace", "memory", "latency", "pause time"]
+    },
+    {
+      q: "Explain OOP principles in Java with real-world examples.",
+      a: "Encapsulation (hiding state via private fields and getters), Inheritance (extending base classes via `extends`), Polymorphism (overriding/overloading methods dynamically), and Abstraction (hiding implementation details via interfaces/abstract classes).",
+      difficulty: "easy",
+      keywords: ["oop", "encapsulation", "inheritance", "polymorphism", "abstraction", "interface", "abstract class", "overriding", "overloading", "extends"]
+    },
+    {
+      q: "How does the JVM handle memory management (Heap vs Stack)?",
+      a: "Stack memory stores primitive values and references to objects for specific threads (LIFO per method call execution). Heap memory stores actual object instances shared across all threads and managed by the Garbage Collector.",
+      difficulty: "easy",
+      keywords: ["jvm", "heap", "stack", "memory", "thread", "primitives", "references", "garbage collection", "lifo", "instance"]
+    },
+    {
+      q: "What is Java Stream API and how does map/filter/reduce work?",
+      a: "The Stream API introduced in Java 8 enables functional-style operations on collections. `filter()` removes elements matching predicates, `map()` transforms items, and `reduce()` collapses elements into a single aggregate result.",
+      difficulty: "medium",
+      keywords: ["stream api", "functional", "filter", "map", "reduce", "lambda", "collectors", "java 8"]
+    },
+    {
+      q: "Explain CompletableFuture and asynchronous programming in Java.",
+      a: "`CompletableFuture` allows non-blocking asynchronous programming in Java, supporting chaining via `thenApply()`, `thenAccept()`, and handling exceptions via `exceptionally()`.",
+      difficulty: "hard",
+      keywords: ["completablefuture", "async", "non-blocking", "threads", "futures", "java 8", "executor"]
+    }
+  ],
+  cpp: [
+    {
+      q: "What is RAII (Resource Acquisition Is Initialization) in C++?",
+      a: "RAII ties resource lifecycle (memory, file handles, mutex locks) to object lifetime. Resources are acquired in the constructor and released in the destructor. When an object goes out of scope, its destructor runs automatically, guaranteeing exception-safe cleanup.",
+      difficulty: "medium",
+      keywords: ["raii", "destructor", "constructor", "resource", "scope", "exception safety", "memory leak", "smart pointer", "lifetime", "cleanup"]
+    },
+    {
+      q: "Explain smart pointers in C++11 (unique_ptr, shared_ptr, weak_ptr).",
+      a: "std::unique_ptr enforces exclusive ownership (non-copyable, moveable). std::shared_ptr uses reference counting for shared ownership. std::weak_ptr provides a non-owning reference to prevent circular dependency memory leaks.",
+      difficulty: "hard",
+      keywords: ["smart pointer", "unique_ptr", "shared_ptr", "weak_ptr", "reference counting", "ownership", "memory leak", "circular reference", "raii", "move"]
+    },
+    {
+      q: "What is the Virtual Method Table (vtable) and how does dynamic dispatch work?",
+      a: "When a class has virtual functions, the compiler creates a vtable containing function pointers. Each object gets a vptr pointing to its class's vtable. At runtime, calling a virtual function looks up the pointer in vtable for dynamic polymorphism.",
+      difficulty: "hard",
+      keywords: ["vtable", "vptr", "virtual function", "polymorphism", "dynamic dispatch", "function pointer", "runtime", "base class", "override"]
+    },
+    {
+      q: "Explain Move Semantics and std::move in C++11.",
+      a: "Move semantics allow transferring resources (like heap memory pointers) from temporary (rvalue) objects to new objects without copying data, optimizing performance. `std::move` casts an lvalue to an rvalue reference.",
+      difficulty: "hard",
+      keywords: ["move semantics", "std::move", "rvalue reference", "lvalue", "copy elision", "performance"]
+    },
+    {
+      q: "What is undefined behavior in C++? Give 3 common examples.",
+      a: "Undefined behavior (UB) occurs when code executes operations for which the C++ standard places no requirements. Examples: dereferencing null/dangling pointers, out-of-bounds array access, and signed integer overflow.",
+      difficulty: "medium",
+      keywords: ["undefined behavior", "dangling pointer", "null pointer", "buffer overflow", "out of bounds", "integer overflow"]
+    }
+  ],
+  "web-security": [
+    {
+      q: "What is Cross-Site Scripting (XSS) and how do you prevent it?",
+      a: "XSS occurs when malicious scripts are injected into trusted websites. Types: Stored, Reflected, DOM-based. Prevention: context-aware output encoding/escaping, Content Security Policy (CSP) headers, using frameworks that auto-escape (React JSX), and setting HttpOnly cookies.",
+      difficulty: "medium",
+      keywords: ["xss", "cross-site scripting", "csp", "sanitization", "encoding", "httponly", "injection", "script", "escaping", "cookies"]
+    },
+    {
+      q: "Explain Cross-Site Request Forgery (CSRF) and mitigation techniques.",
+      a: "CSRF tricks an authenticated user into executing unwanted actions on a site where they are authenticated. Mitigations: Anti-CSRF tokens (synchronizer token pattern), SameSite cookie attributes (SameSite=Strict or Lax), and verifying Origin/Referer headers.",
+      difficulty: "medium",
+      keywords: ["csrf", "cross-site request forgery", "samesite", "token", "cookie", "origin", "referer", "authentication", "session", "headers"]
+    },
+    {
+      q: "How does JWT (JSON Web Token) authentication work and what are security best practices?",
+      a: "JWTs consist of Header, Payload, and Signature. Server signs the token with a secret key; client sends it in Authorization header (Bearer). Best practices: use short expiration (exp), store in HttpOnly secure cookies to avoid XSS, and use HTTPS.",
+      difficulty: "easy",
+      keywords: ["jwt", "bearer", "signature", "payload", "httponly", "token", "header", "expiration", "https", "authentication"]
+    },
+    {
+      q: "What is SQL Injection (SQLi) and how do parameterized queries prevent it?",
+      a: "SQLi happens when user input is concatenated directly into SQL query strings, allowing attackers to execute arbitrary SQL commands. Parameterized queries (prepared statements) separate SQL logic from data parameters.",
+      difficulty: "easy",
+      keywords: ["sqli", "sql injection", "parameterized query", "prepared statement", "sanitization", "database security"]
+    },
+    {
+      q: "Explain Content Security Policy (CSP) headers and how they enhance security.",
+      a: "CSP is an HTTP header that lets site administrators restrict which resources (JavaScript, CSS, Images, Frames) the browser is allowed to load for a given page, drastically reducing XSS and clickjacking vulnerabilities.",
+      difficulty: "medium",
+      keywords: ["csp", "content security policy", "http header", "xss", "script-src", "whitelisting"]
+    }
+  ],
+  "machine-learning": [
+    {
+      q: "Explain the difference between supervised, unsupervised, and reinforcement learning.",
+      a: "Supervised learning uses labeled training data (e.g. classification, regression). Unsupervised learning finds hidden patterns in unlabeled data (e.g. clustering with K-Means, PCA). Reinforcement learning learns actions in an environment to maximize rewards (e.g. Q-learning, RLHF).",
+      difficulty: "easy",
+      keywords: ["supervised", "unsupervised", "reinforcement", "labeled", "unlabeled", "clustering", "regression", "reward", "classification", "k-means"]
+    },
+    {
+      q: "What is overfitting in ML and how do you prevent it?",
+      a: "Overfitting happens when a model learns training noise rather than general patterns, performing great on train set but poorly on validation. Prevention: cross-validation, regularization (L1/L2), dropout, early stopping, pruning, and collecting more data.",
+      difficulty: "medium",
+      keywords: ["overfitting", "underfitting", "regularization", "dropout", "cross-validation", "early stopping", "generalization", "noise", "validation"]
+    },
+    {
+      q: "How do Transformer models and Attention mechanisms work?",
+      a: "Transformers process sequences in parallel using Self-Attention, computing query-key-value (Q, K, V) dot products to weigh the context of each word relative to every other word regardless of position. Powers LLMs like GPT and BERT.",
+      difficulty: "hard",
+      keywords: ["transformer", "attention", "self-attention", "query", "key", "value", "llm", "bert", "gpt", "sequence"]
+    },
+    {
+      q: "What is the difference between Precision and Recall? How does the F1-Score combine them?",
+      a: "Precision measures true positives out of all predicted positives (quality). Recall measures true positives out of all actual positives (quantity). F1-Score is the harmonic mean of Precision and Recall.",
+      difficulty: "medium",
+      keywords: ["precision", "recall", "f1-score", "harmonic mean", "confusion matrix", "classification", "metrics"]
+    },
+    {
+      q: "Explain Gradient Descent and the Learning Rate parameter.",
+      a: "Gradient Descent is an optimization algorithm that iteratively minimizes a loss function by taking steps proportional to the negative of the gradient. The learning rate controls step size: too high overshoots, too low converges slowly.",
+      difficulty: "easy",
+      keywords: ["gradient descent", "learning rate", "loss function", "optimization", "adam", "sgd", "convergence"]
     }
   ]
 };

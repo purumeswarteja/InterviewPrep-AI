@@ -1,121 +1,159 @@
-import { Fragment, jsx, jsxs } from "react/jsx-runtime";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Brain, Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
-import toast from "react-hot-toast";
-import { useAuth } from "../../context/AuthContext";
-function LoginPage() {
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Mail, Lock, Sparkles, ArrowRight, Brain, CheckCircle2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
+
+export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!email || !password) {
+      toast.error('Please enter both email and password.');
+      return;
+    }
     setLoading(true);
-    const { error } = await signIn(email, password);
-    setLoading(false);
-    if (error) {
-      toast.error(error.message.includes("Invalid login credentials") ? "Invalid email or password." : error.message);
-    } else {
-      toast.success("Welcome back!");
-      navigate("/app/dashboard");
+    try {
+      const res = await signIn(email, password);
+      if (res?.error) {
+        toast.error(res.error);
+      } else {
+        toast.success('Signed in successfully!');
+        navigate('/app');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      toast.error('Unable to connect to server. Please check your connection.');
+    } finally {
+      setLoading(false);
     }
   };
-  return /* @__PURE__ */ jsxs("div", { className: "min-h-screen grid lg:grid-cols-2", children: [
-    /* @__PURE__ */ jsxs("div", { className: "hidden lg:flex flex-col justify-between p-12 bg-ink-900 text-white relative overflow-hidden", children: [
-      /* @__PURE__ */ jsx("div", { className: "absolute inset-0 mesh-bg opacity-30" }),
-      /* @__PURE__ */ jsx("div", { className: "absolute inset-0 grid-pattern opacity-10" }),
-      /* @__PURE__ */ jsxs(Link, { to: "/", className: "relative flex items-center gap-2.5", children: [
-        /* @__PURE__ */ jsx("div", { className: "w-10 h-10 rounded-xl bg-gradient-to-br from-brand-400 to-sky-400 flex items-center justify-center", children: /* @__PURE__ */ jsx(Brain, { className: "w-5 h-5 text-white" }) }),
-        /* @__PURE__ */ jsx("span", { className: "font-display font-bold text-xl", children: "InterPrep AI" })
-      ] }),
-      /* @__PURE__ */ jsxs("div", { className: "relative", children: [
-        /* @__PURE__ */ jsxs("h2", { className: "font-display font-bold text-4xl leading-tight", children: [
-          "Welcome back to your",
-          /* @__PURE__ */ jsx("br", {}),
-          "interview prep journey."
-        ] }),
-        /* @__PURE__ */ jsx("p", { className: "mt-4 text-ink-300 text-lg max-w-md", children: "Pick up where you left off. Your next practice session is just a click away." }),
-        /* @__PURE__ */ jsx("div", { className: "mt-8 space-y-3", children: ["AI-powered mock interviews", "Real-time feedback & scoring", "Track your progress over time"].map((t) => /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3 text-ink-200", children: [
-          /* @__PURE__ */ jsx("div", { className: "w-5 h-5 rounded-full bg-brand-500/20 flex items-center justify-center", children: /* @__PURE__ */ jsx("div", { className: "w-2 h-2 rounded-full bg-brand-400" }) }),
-          t
-        ] }, t)) })
-      ] }),
-      /* @__PURE__ */ jsxs("p", { className: "relative text-sm text-ink-400", children: [
-        "\xA9 ",
-        (/* @__PURE__ */ new Date()).getFullYear(),
-        " InterPrep AI"
-      ] })
-    ] }),
-    /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center p-6 sm:p-12 bg-ink-50", children: /* @__PURE__ */ jsxs("div", { className: "w-full max-w-md", children: [
-      /* @__PURE__ */ jsxs(Link, { to: "/", className: "lg:hidden flex items-center gap-2.5 mb-8", children: [
-        /* @__PURE__ */ jsx("div", { className: "w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-sky-500 flex items-center justify-center", children: /* @__PURE__ */ jsx(Brain, { className: "w-5 h-5 text-white" }) }),
-        /* @__PURE__ */ jsx("span", { className: "font-display font-bold text-xl", children: "InterPrep AI" })
-      ] }),
-      /* @__PURE__ */ jsx("h1", { className: "font-display font-bold text-3xl text-ink-950", children: "Sign in" }),
-      /* @__PURE__ */ jsx("p", { className: "mt-2 text-ink-500", children: "Enter your credentials to access your account." }),
-      /* @__PURE__ */ jsxs("form", { onSubmit: handleSubmit, className: "mt-8 space-y-5", children: [
-        /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("label", { className: "block text-sm font-medium text-ink-700 mb-1.5", children: "Email" }),
-          /* @__PURE__ */ jsxs("div", { className: "relative", children: [
-            /* @__PURE__ */ jsx(Mail, { className: "absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-400" }),
-            /* @__PURE__ */ jsx(
-              "input",
-              {
-                required: true,
-                type: "email",
-                value: email,
-                onChange: (e) => setEmail(e.target.value),
-                className: "w-full pl-11 pr-4 py-3 rounded-xl border border-ink-200 bg-white focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none transition-all",
-                placeholder: "you@example.com"
-              }
-            )
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between mb-1.5", children: [
-            /* @__PURE__ */ jsx("label", { className: "block text-sm font-medium text-ink-700", children: "Password" }),
-            /* @__PURE__ */ jsx(Link, { to: "/forgot-password", className: "text-xs text-brand-600 hover:text-brand-700 font-medium", children: "Forgot password?" })
-          ] }),
-          /* @__PURE__ */ jsxs("div", { className: "relative", children: [
-            /* @__PURE__ */ jsx(Lock, { className: "absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-400" }),
-            /* @__PURE__ */ jsx(
-              "input",
-              {
-                required: true,
-                type: showPassword ? "text" : "password",
-                value: password,
-                onChange: (e) => setPassword(e.target.value),
-                className: "w-full pl-11 pr-11 py-3 rounded-xl border border-ink-200 bg-white focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none transition-all",
-                placeholder: "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
-              }
-            ),
-            /* @__PURE__ */ jsx("button", { type: "button", onClick: () => setShowPassword(!showPassword), className: "absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-600", children: showPassword ? /* @__PURE__ */ jsx(EyeOff, { className: "w-5 h-5" }) : /* @__PURE__ */ jsx(Eye, { className: "w-5 h-5" }) })
-          ] })
-        ] }),
-        /* @__PURE__ */ jsx(
-          "button",
-          {
-            type: "submit",
-            disabled: loading,
-            className: "w-full py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2",
-            children: loading ? "Signing in\u2026" : /* @__PURE__ */ jsxs(Fragment, { children: [
-              "Sign In ",
-              /* @__PURE__ */ jsx(ArrowRight, { className: "w-4 h-4" })
-            ] })
-          }
-        )
-      ] }),
-      /* @__PURE__ */ jsxs("p", { className: "mt-6 text-center text-sm text-ink-500", children: [
-        "Don't have an account?",
-        " ",
-        /* @__PURE__ */ jsx(Link, { to: "/register", className: "text-brand-600 hover:text-brand-700 font-semibold", children: "Create one free" })
-      ] })
-    ] }) })
-  ] });
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-xl overflow-hidden grid md:grid-cols-2 border border-gray-100 min-h-[640px]">
+        
+        {/* LEFT SIDE: Distinct Candidate Preparation Image Panel */}
+        <div className="relative hidden md:flex flex-col justify-between p-10 overflow-hidden bg-gray-900">
+          <img
+            src="https://images.pexels.com/photos/5439152/pexels-photo-5439152.jpeg?auto=compress&cs=tinysrgb&w=1600"
+            alt="Candidate preparing for interview"
+            className="absolute inset-0 w-full h-full object-cover opacity-45 hover:scale-105 transition-transform duration-700"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/60 to-transparent" />
+          
+          {/* Top Logo */}
+          <div className="relative z-10">
+            <Link to="/" className="inline-flex items-center gap-2 text-white">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                <Brain className="w-6 h-6 text-white" />
+              </div>
+              <span className="font-bold text-xl tracking-tight text-white">InterPrep AI</span>
+            </Link>
+          </div>
+
+          {/* Bottom Overlay Content */}
+          <div className="relative z-10 space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-semibold backdrop-blur-md">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Sign In to Continue</span>
+            </div>
+
+            <h2 className="text-3xl font-bold text-white leading-tight">
+              Welcome back! Resume your interview practice sessions.
+            </h2>
+
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center gap-2 text-sm text-gray-200">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Track your performance & progress over time</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-200">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Access saved mock & HR interview results</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-200">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Practice 2-way AI voice conversations</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT SIDE: Login Form */}
+        <div className="p-8 sm:p-12 flex flex-col justify-center bg-white">
+          <div className="mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Welcome back</h1>
+            <p className="text-gray-500 text-sm mt-1">Enter your credentials to access your interview workspace.</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  required
+                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm text-gray-900 transition"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Password
+                </label>
+              </div>
+              <div className="relative">
+                <Lock className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  required
+                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm text-gray-900 transition"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-sm shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <span>Sign In</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+
+          <p className="text-center text-sm text-gray-600 mt-8">
+            Don't have an account?{' '}
+            <Link to="/register" className="font-semibold text-emerald-600 hover:text-emerald-700 transition">
+              Create an account
+            </Link>
+          </p>
+        </div>
+
+      </div>
+    </div>
+  );
 }
-export {
-  LoginPage as default
-};

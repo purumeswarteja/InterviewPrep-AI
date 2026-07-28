@@ -1,158 +1,179 @@
-import { Fragment, jsx, jsxs } from "react/jsx-runtime";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Brain, User, Mail, Lock, ArrowRight, Eye, EyeOff, Check } from "lucide-react";
-import toast from "react-hot-toast";
-import { useAuth } from "../../context/AuthContext";
-function RegisterPage() {
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Mail, Lock, User, Sparkles, ArrowRight, Brain, CheckCircle2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
+
+export default function RegisterPage() {
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const requirements = [
-    { label: "At least 6 characters", met: password.length >= 6 },
-    { label: "Contains a letter", met: /[a-zA-Z]/.test(password) },
-    { label: "Contains a number", met: /\d/.test(password) }
-  ];
-  const passwordValid = requirements.every((r) => r.met);
-  const handleSubmit = async (e) => {
+
+  const handleRegister = async (e) => {
     e.preventDefault();
-    if (!passwordValid) {
-      toast.error("Please meet all the password requirements shown above.");
+    if (!fullName || !email || !password) {
+      toast.error('Please fill in all fields.');
+      return;
+    }
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters long.');
       return;
     }
     setLoading(true);
-    const { error } = await signUp(email, password, name);
-    setLoading(false);
-    if (error) {
-      const msg = error.message || "";
-      if (msg.includes("already registered")) {
-        toast.error("An account with this email already exists.");
-      } else if (/password/i.test(msg)) {
-        toast.error(passwordValid ? "Could not create account. Please try a different password." : "Please meet the password requirements shown above.");
+    try {
+      const res = await signUp(email, password, fullName);
+      if (res?.error) {
+        toast.error(res.error);
       } else {
-        toast.error(msg);
+        toast.success('Account created successfully! Welcome aboard.');
+        navigate('/app');
       }
-    } else {
-      toast.success("Account created! Welcome to InterPrep AI.");
-      navigate("/app/dashboard");
+    } catch (err) {
+      console.error('Register error:', err);
+      toast.error('Unable to connect to server. Please check your connection.');
+    } finally {
+      setLoading(false);
     }
   };
-  return /* @__PURE__ */ jsxs("div", { className: "min-h-screen grid lg:grid-cols-2", children: [
-    /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center p-6 sm:p-12 bg-ink-50", children: /* @__PURE__ */ jsxs("div", { className: "w-full max-w-md", children: [
-      /* @__PURE__ */ jsxs(Link, { to: "/", className: "lg:hidden flex items-center gap-2.5 mb-8", children: [
-        /* @__PURE__ */ jsx("div", { className: "w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-sky-500 flex items-center justify-center", children: /* @__PURE__ */ jsx(Brain, { className: "w-5 h-5 text-white" }) }),
-        /* @__PURE__ */ jsx("span", { className: "font-display font-bold text-xl", children: "InterPrep AI" })
-      ] }),
-      /* @__PURE__ */ jsx("h1", { className: "font-display font-bold text-3xl text-ink-950", children: "Create your account" }),
-      /* @__PURE__ */ jsx("p", { className: "mt-2 text-ink-500", children: "Start your interview prep journey today. It's free." }),
-      /* @__PURE__ */ jsxs("form", { onSubmit: handleSubmit, className: "mt-8 space-y-5", children: [
-        /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("label", { className: "block text-sm font-medium text-ink-700 mb-1.5", children: "Full Name" }),
-          /* @__PURE__ */ jsxs("div", { className: "relative", children: [
-            /* @__PURE__ */ jsx(User, { className: "absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-400" }),
-            /* @__PURE__ */ jsx(
-              "input",
-              {
-                required: true,
-                value: name,
-                onChange: (e) => setName(e.target.value),
-                className: "w-full pl-11 pr-4 py-3 rounded-xl border border-ink-200 bg-white focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none transition-all"
-              }
-            )
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("label", { className: "block text-sm font-medium text-ink-700 mb-1.5", children: "Email" }),
-          /* @__PURE__ */ jsxs("div", { className: "relative", children: [
-            /* @__PURE__ */ jsx(Mail, { className: "absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-400" }),
-            /* @__PURE__ */ jsx(
-              "input",
-              {
-                required: true,
-                type: "email",
-                value: email,
-                onChange: (e) => setEmail(e.target.value),
-                className: "w-full pl-11 pr-4 py-3 rounded-xl border border-ink-200 bg-white focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none transition-all"
-              }
-            )
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("label", { className: "block text-sm font-medium text-ink-700 mb-1.5", children: "Password" }),
-          /* @__PURE__ */ jsxs("div", { className: "relative", children: [
-            /* @__PURE__ */ jsx(Lock, { className: "absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-400" }),
-            /* @__PURE__ */ jsx(
-              "input",
-              {
-                required: true,
-                type: showPassword ? "text" : "password",
-                value: password,
-                onChange: (e) => setPassword(e.target.value),
-                className: "w-full pl-11 pr-11 py-3 rounded-xl border border-ink-200 bg-white focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none transition-all"
-              }
-            ),
-            /* @__PURE__ */ jsx("button", { type: "button", onClick: () => setShowPassword(!showPassword), className: "absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-600", children: showPassword ? /* @__PURE__ */ jsx(EyeOff, { className: "w-5 h-5" }) : /* @__PURE__ */ jsx(Eye, { className: "w-5 h-5" }) })
-          ] }),
-          /* @__PURE__ */ jsx("div", { className: "mt-2 space-y-1", children: requirements.map((r) => /* @__PURE__ */ jsxs("div", { className: `flex items-center gap-2 text-xs ${r.met ? "text-brand-600" : "text-ink-400"}`, children: [
-            /* @__PURE__ */ jsx(Check, { className: `w-3.5 h-3.5 ${r.met ? "opacity-100" : "opacity-30"}` }),
-            r.label
-          ] }, r.label)) })
-        ] }),
-        /* @__PURE__ */ jsx(
-          "button",
-          {
-            type: "submit",
-            disabled: loading,
-            className: "w-full py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2",
-            children: loading ? "Creating account\u2026" : /* @__PURE__ */ jsxs(Fragment, { children: [
-              "Create Account ",
-              /* @__PURE__ */ jsx(ArrowRight, { className: "w-4 h-4" })
-            ] })
-          }
-        )
-      ] }),
-      /* @__PURE__ */ jsxs("p", { className: "mt-6 text-center text-sm text-ink-500", children: [
-        "Already have an account?",
-        " ",
-        /* @__PURE__ */ jsx(Link, { to: "/login", className: "text-brand-600 hover:text-brand-700 font-semibold", children: "Sign in" })
-      ] })
-    ] }) }),
-    /* @__PURE__ */ jsxs("div", { className: "hidden lg:flex flex-col justify-between p-12 bg-ink-900 text-white relative overflow-hidden", children: [
-      /* @__PURE__ */ jsx("div", { className: "absolute inset-0 mesh-bg opacity-30" }),
-      /* @__PURE__ */ jsx("div", { className: "absolute inset-0 grid-pattern opacity-10" }),
-      /* @__PURE__ */ jsxs(Link, { to: "/", className: "relative flex items-center gap-2.5", children: [
-        /* @__PURE__ */ jsx("div", { className: "w-10 h-10 rounded-xl bg-gradient-to-br from-brand-400 to-sky-400 flex items-center justify-center", children: /* @__PURE__ */ jsx(Brain, { className: "w-5 h-5 text-white" }) }),
-        /* @__PURE__ */ jsx("span", { className: "font-display font-bold text-xl", children: "InterPrep AI" })
-      ] }),
-      /* @__PURE__ */ jsxs("div", { className: "relative", children: [
-        /* @__PURE__ */ jsxs("h2", { className: "font-display font-bold text-4xl leading-tight", children: [
-          "Join thousands who",
-          /* @__PURE__ */ jsx("br", {}),
-          "aced their interviews."
-        ] }),
-        /* @__PURE__ */ jsx("p", { className: "mt-4 text-ink-300 text-lg max-w-md", children: "Get personalized AI-powered interview coaching that adapts to your skill level and goals." }),
-        /* @__PURE__ */ jsx("div", { className: "mt-8 grid grid-cols-2 gap-4 max-w-md", children: [
-          { v: "50K+", l: "Practice sessions" },
-          { v: "12K+", l: "Job offers landed" },
-          { v: "4.9/5", l: "User rating" },
-          { v: "Free", l: "Forever plan" }
-        ].map((s) => /* @__PURE__ */ jsxs("div", { className: "p-4 rounded-xl bg-white/5 border border-white/10", children: [
-          /* @__PURE__ */ jsx("p", { className: "font-display font-bold text-2xl text-white", children: s.v }),
-          /* @__PURE__ */ jsx("p", { className: "text-sm text-ink-400", children: s.l })
-        ] }, s.l)) })
-      ] }),
-      /* @__PURE__ */ jsxs("p", { className: "relative text-sm text-ink-400", children: [
-        "\xA9 ",
-        (/* @__PURE__ */ new Date()).getFullYear(),
-        " InterPrep AI"
-      ] })
-    ] })
-  ] });
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-xl overflow-hidden grid md:grid-cols-2 border border-gray-100 min-h-[640px]">
+        
+        {/* LEFT SIDE: Distinct AI Interview Coaching Image Panel */}
+        <div className="relative hidden md:flex flex-col justify-between p-10 overflow-hidden bg-gray-900">
+          <img
+            src="https://images.pexels.com/photos/8636626/pexels-photo-8636626.jpeg?auto=compress&cs=tinysrgb&w=1600"
+            alt="AI Interview Coaching Session"
+            className="absolute inset-0 w-full h-full object-cover opacity-40 hover:scale-105 transition-transform duration-700"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/60 to-transparent" />
+          
+          {/* Top Logo */}
+          <div className="relative z-10">
+            <Link to="/" className="inline-flex items-center gap-2 text-white">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                <Brain className="w-6 h-6 text-white" />
+              </div>
+              <span className="font-bold text-xl tracking-tight text-white">InterPrep AI</span>
+            </Link>
+          </div>
+
+          {/* Bottom Overlay Content */}
+          <div className="relative z-10 space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-semibold backdrop-blur-md">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Join Successful Candidates</span>
+            </div>
+
+            <h2 className="text-3xl font-bold text-white leading-tight">
+              Start practicing free & land your dream job offer.
+            </h2>
+
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center gap-2 text-sm text-gray-200">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Zero configuration required to start</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-200">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Detailed AI performance analytics & scores</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-200">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Custom role & industry mock interviews</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT SIDE: Register Form */}
+        <div className="p-8 sm:p-12 flex flex-col justify-center bg-white">
+          <div className="mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Create an account</h1>
+            <p className="text-gray-500 text-sm mt-1">Get started with AI mock interviews today.</p>
+          </div>
+
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                Full Name
+              </label>
+              <div className="relative">
+                <User className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Enter your name"
+                  required
+                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm text-gray-900 transition"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  required
+                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm text-gray-900 transition"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  required
+                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm text-gray-900 transition"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-sm shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <span>Create Account</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+
+          <p className="text-center text-sm text-gray-600 mt-6">
+            Already have an account?{' '}
+            <Link to="/login" className="font-semibold text-emerald-600 hover:text-emerald-700 transition">
+              Sign in
+            </Link>
+          </p>
+        </div>
+
+      </div>
+    </div>
+  );
 }
-export {
-  RegisterPage as default
-};

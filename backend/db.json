@@ -1,6 +1,232 @@
 {
-  "users": [],
-  "profiles": [],
-  "interview_sessions": [],
+  "users": [
+    {
+      "id": "fa456144-2380-4b95-abe1-56981af05ced",
+      "email": "test@test.com",
+      "password": "$2a$10$xdysdk4bmfYU.KpSzhbDr.mTZ6z7tl340nWbKYBO7X0/gAy8eHl2q",
+      "created_at": "2026-07-28T10:41:42.915Z"
+    },
+    {
+      "id": "903acad1-deb1-4bc8-b8b2-c8e935a59d1c",
+      "email": "eswar@gmail.com",
+      "password": "$2a$10$/8f/XJkm6azhSXsey/XJiuozlT5FfOMzYin9/wRiKArL2zG9ZNkZe",
+      "created_at": "2026-07-28T11:08:37.577Z"
+    },
+    {
+      "id": "332c4736-db34-4d7f-983f-f2186c9d015d",
+      "email": "authtest@example.com",
+      "password": "$2a$10$2/En/HiyE1c44OuWpSy1defiAT6EN6fTUhsLmRY39YrX.NRNEkMaO",
+      "created_at": "2026-07-28T12:22:21.062Z"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "99329d49-cbd8-4293-8a0d-5351761c997e",
+      "user_id": "fa456144-2380-4b95-abe1-56981af05ced",
+      "full_name": "Test User",
+      "bio": "",
+      "phone": "",
+      "location": "",
+      "linkedin_url": "",
+      "github_url": "",
+      "portfolio_url": "",
+      "target_role": "",
+      "experience_level": "junior",
+      "skills": [],
+      "streak_count": 0,
+      "longest_streak": 0,
+      "last_active_date": null,
+      "weekly_goal": 5,
+      "monthly_goal": 20,
+      "total_interviews": 0,
+      "avg_score": 0,
+      "created_at": "2026-07-28T10:41:42.915Z",
+      "updated_at": "2026-07-28T10:41:42.915Z"
+    },
+    {
+      "id": "33b47841-535c-4013-a1ea-2ec48f43a9a1",
+      "user_id": "903acad1-deb1-4bc8-b8b2-c8e935a59d1c",
+      "full_name": "eswar",
+      "bio": "i am a student",
+      "phone": "9704321064",
+      "location": "rayachoty",
+      "linkedin_url": "linkedin.com",
+      "github_url": "github.com",
+      "portfolio_url": "portfolio.com",
+      "target_role": "Full stack developer mern",
+      "experience_level": "junior",
+      "skills": [
+        "react",
+        "mongodb",
+        "pythoon",
+        "node",
+        "git",
+        "github",
+        "vs code",
+        "dsa",
+        "html",
+        "css"
+      ],
+      "streak_count": 0,
+      "longest_streak": 0,
+      "last_active_date": null,
+      "weekly_goal": 5,
+      "monthly_goal": 20,
+      "total_interviews": 1,
+      "avg_score": 11,
+      "created_at": "2026-07-28T11:08:37.577Z",
+      "updated_at": "2026-07-28T11:19:40.501Z"
+    },
+    {
+      "id": "4ad973fc-c3fc-47b8-82e4-cb095f1353e6",
+      "user_id": "332c4736-db34-4d7f-983f-f2186c9d015d",
+      "full_name": "Auth Test User",
+      "bio": "",
+      "phone": "",
+      "location": "",
+      "linkedin_url": "",
+      "github_url": "",
+      "portfolio_url": "",
+      "target_role": "",
+      "experience_level": "junior",
+      "skills": [],
+      "streak_count": 0,
+      "longest_streak": 0,
+      "last_active_date": null,
+      "weekly_goal": 5,
+      "monthly_goal": 20,
+      "total_interviews": 0,
+      "avg_score": 0,
+      "created_at": "2026-07-28T12:22:21.062Z",
+      "updated_at": "2026-07-28T12:22:21.062Z"
+    }
+  ],
+  "interview_sessions": [
+    {
+      "id": "d819b987-fc45-4bab-8284-f048062a909c",
+      "user_id": "903acad1-deb1-4bc8-b8b2-c8e935a59d1c",
+      "type": "mock",
+      "topic": "python",
+      "difficulty": "easy",
+      "score": 11,
+      "duration_seconds": 148,
+      "questions": [
+        {
+          "id": "q-0",
+          "question": "How do generators differ from regular functions?",
+          "answer": "generators uses function names as parameter while normal function use values as parameters",
+          "feedback": "This answer needs work. You covered 1/10 key concepts. Focus on: yield, lazy, iterator, next, suspend.",
+          "score": 11,
+          "model_answer": "Generators use `yield` to produce values lazily, suspending between yields and keeping their state. `next()` resumes until the next yield. This makes them memory-efficient for large or infinite sequences. Generator expressions `(x for x in ...)` are a concise form.",
+          "tags": [
+            "generator"
+          ]
+        },
+        {
+          "id": "q-1",
+          "question": "Explain list comprehensions with an example.",
+          "answer": "list comprehension is the short form of creating a function",
+          "feedback": "This answer needs work. You covered 1/10 key concepts. Focus on: expression, iterable, condition, syntax, concise.",
+          "score": 11,
+          "model_answer": "A list comprehension builds a list in one expression: `[expression for item in iterable if condition]`. Example: `[x**2 for x in range(10) if x % 2 == 0]` gives `[0,4,16,36,64]`. They're faster than loops and also work for sets, dicts, and generators.",
+          "tags": [
+            "list comprehension"
+          ]
+        },
+        {
+          "id": "q-2",
+          "question": "Explain generators and when to use them.",
+          "answer": "when thee is use of function insdide a function",
+          "feedback": "This answer needs work. You covered 0/7 key concepts. Focus on: generator, yield, lazy, iterator, memory.",
+          "score": 5,
+          "model_answer": "Generators use `yield` to produce values lazily, suspending between yields and keeping state. They are memory-efficient for streaming large data and can model pipelines; combined with `itertools` they enable elegant solutions for big-data processing.",
+          "tags": []
+        },
+        {
+          "id": "q-3",
+          "question": "Explain Python's GIL (Global Interpreter Lock).",
+          "answer": "i dont know",
+          "feedback": "This answer needs work. You covered 0/10 key concepts. Focus on: gil, thread, mutex, cpython, bytecode.",
+          "score": 5,
+          "model_answer": "The GIL is a mutex in CPython letting only one thread run bytecode at a time, because reference counting isn't thread-safe. It's released during I/O, so threads help I/O-bound code, but CPU-bound work needs multiprocessing or C extensions to bypass it.",
+          "tags": []
+        },
+        {
+          "id": "q-4",
+          "question": "Explain the difference between a list and a tuple in Python.",
+          "answer": "list is mutable data type i python while tuple is unmutable and we decalre ist with []  and tuple with ()",
+          "feedback": "This answer needs work. You covered 3/10 key concepts. Focus on: immutable, hashable, dictionary key, sequence, memory.",
+          "score": 23,
+          "model_answer": "Lists (`[]`) are mutable; tuples (`()`) are immutable and hashable, so they can be dict keys/set elements. Tuples are slightly faster and smaller. Use lists for dynamic collections and tuples for fixed records; a one-element tuple needs a trailing comma `(1,)`.",
+          "tags": [
+            "list",
+            "tuple",
+            "mutable"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "id": "q-0",
+          "question": "How do generators differ from regular functions?",
+          "answer": "generators uses function names as parameter while normal function use values as parameters",
+          "feedback": "This answer needs work. You covered 1/10 key concepts. Focus on: yield, lazy, iterator, next, suspend.",
+          "score": 11,
+          "model_answer": "Generators use `yield` to produce values lazily, suspending between yields and keeping their state. `next()` resumes until the next yield. This makes them memory-efficient for large or infinite sequences. Generator expressions `(x for x in ...)` are a concise form.",
+          "tags": [
+            "generator"
+          ]
+        },
+        {
+          "id": "q-1",
+          "question": "Explain list comprehensions with an example.",
+          "answer": "list comprehension is the short form of creating a function",
+          "feedback": "This answer needs work. You covered 1/10 key concepts. Focus on: expression, iterable, condition, syntax, concise.",
+          "score": 11,
+          "model_answer": "A list comprehension builds a list in one expression: `[expression for item in iterable if condition]`. Example: `[x**2 for x in range(10) if x % 2 == 0]` gives `[0,4,16,36,64]`. They're faster than loops and also work for sets, dicts, and generators.",
+          "tags": [
+            "list comprehension"
+          ]
+        },
+        {
+          "id": "q-2",
+          "question": "Explain generators and when to use them.",
+          "answer": "when thee is use of function insdide a function",
+          "feedback": "This answer needs work. You covered 0/7 key concepts. Focus on: generator, yield, lazy, iterator, memory.",
+          "score": 5,
+          "model_answer": "Generators use `yield` to produce values lazily, suspending between yields and keeping state. They are memory-efficient for streaming large data and can model pipelines; combined with `itertools` they enable elegant solutions for big-data processing.",
+          "tags": []
+        },
+        {
+          "id": "q-3",
+          "question": "Explain Python's GIL (Global Interpreter Lock).",
+          "answer": "i dont know",
+          "feedback": "This answer needs work. You covered 0/10 key concepts. Focus on: gil, thread, mutex, cpython, bytecode.",
+          "score": 5,
+          "model_answer": "The GIL is a mutex in CPython letting only one thread run bytecode at a time, because reference counting isn't thread-safe. It's released during I/O, so threads help I/O-bound code, but CPU-bound work needs multiprocessing or C extensions to bypass it.",
+          "tags": []
+        },
+        {
+          "id": "q-4",
+          "question": "Explain the difference between a list and a tuple in Python.",
+          "answer": "list is mutable data type i python while tuple is unmutable and we decalre ist with []  and tuple with ()",
+          "feedback": "This answer needs work. You covered 3/10 key concepts. Focus on: immutable, hashable, dictionary key, sequence, memory.",
+          "score": 23,
+          "model_answer": "Lists (`[]`) are mutable; tuples (`()`) are immutable and hashable, so they can be dict keys/set elements. Tuples are slightly faster and smaller. Use lists for dynamic collections and tuples for fixed records; a one-element tuple needs a trailing comma `(1,)`.",
+          "tags": [
+            "list",
+            "tuple",
+            "mutable"
+          ]
+        }
+      ],
+      "feedback": {
+        "summary": "AI-generated feedback",
+        "avg_score": 11
+      },
+      "status": "completed",
+      "created_at": "2026-07-28T11:19:40.501Z"
+    }
+  ],
   "resume_analyses": []
 }

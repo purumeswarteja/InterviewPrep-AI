@@ -58,7 +58,17 @@ function AuthProvider({ children }) {
     setProfile(null);
     setSession(null);
   };
-  return /* @__PURE__ */ jsx(AuthContext.Provider, { value: { session, user, profile, loading, signUp, signIn, signOut, refreshProfile }, children });
+  const deleteAccount = async () => {
+    const data = await api.deleteAccount();
+    if (!data.error) {
+      api.logout();
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+    }
+    return data;
+  };
+  return /* @__PURE__ */ jsx(AuthContext.Provider, { value: { session, user, profile, loading, signUp, signIn, signOut, deleteAccount, refreshProfile }, children });
 }
 function useAuth() {
   const ctx = useContext(AuthContext);

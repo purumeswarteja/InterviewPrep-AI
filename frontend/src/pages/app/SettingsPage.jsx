@@ -1,20 +1,24 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import { useState } from "react";
-import { Bell, Shield, Target, Globe, LogOut, Save, Trash2, Eye, EyeOff } from "lucide-react";
+import { Bell, Shield, Target, Globe, LogOut, Save, Trash2, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../lib/api";
 import { Card, Button } from "../../components/ui";
 import { cn } from "../../lib/utils";
+
 function SettingsPage() {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, deleteAccount } = useAuth();
   const navigate = useNavigate();
   const [weeklyGoal, setWeeklyGoal] = useState(profile?.weekly_goal || 5);
   const [monthlyGoal, setMonthlyGoal] = useState(profile?.monthly_goal || 20);
   const [notifications, setNotifications] = useState({ email: true, push: false, streak: true, weekly: true });
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   const handleSaveGoals = async () => {
     setSaving(true);
     const response = await api.updateProfile({ weekly_goal: weeklyGoal, monthly_goal: monthlyGoal });
@@ -22,17 +26,38 @@ function SettingsPage() {
     if (response.error) toast.error("Failed to save goals.");
     else toast.success("Goals updated!");
   };
+
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
   };
+
+  const handleConfirmDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      const response = await deleteAccount();
+      if (response?.error) {
+        toast.error(response.error || "Failed to delete account.");
+        setDeleting(false);
+      } else {
+        toast.success("Account deleted successfully.");
+        setShowDeleteModal(false);
+        navigate("/");
+      }
+    } catch (err) {
+      toast.error("An error occurred while deleting account.");
+      setDeleting(false);
+    }
+  };
+
   const toggleItems = [
     { key: "email", label: "Email Notifications", desc: "Receive emails about your activity", icon: Bell },
     { key: "push", label: "Push Notifications", desc: "Get browser push notifications", icon: Bell },
     { key: "streak", label: "Streak Reminders", desc: "Daily reminders to keep your streak", icon: Target },
     { key: "weekly", label: "Weekly Progress Report", desc: "Summary of your week every Sunday", icon: Globe }
   ];
-  return /* @__PURE__ */ jsxs("div", { className: "max-w-3xl mx-auto animate-fade-in space-y-6", children: [
+
+  return /* @__PURE__ */ jsxs("div", { className: "max-w-3xl mx-auto animate-fade-in space-y-6 relative", children: [
     /* @__PURE__ */ jsxs("div", { children: [
       /* @__PURE__ */ jsx("h1", { className: "font-display font-bold text-2xl sm:text-3xl text-ink-950", children: "Settings" }),
       /* @__PURE__ */ jsx("p", { className: "text-ink-500 mt-1", children: "Manage your account, preferences, and goals." })
@@ -151,7 +176,7 @@ function SettingsPage() {
         )
       ] })
     ] }),
-    /* @__PURE__ */ jsxs(Card, { className: "border-red-200", children: [
+    /* @__PURE__ */ jsxs(Card, { className: "border-red-200 bg-red-50/30", children: [
       /* @__PURE__ */ jsxs("h2", { className: "font-display font-semibold text-lg text-red-600 mb-2 flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(Trash2, { className: "w-5 h-5" }),
         " Danger Zone"
@@ -161,16 +186,73 @@ function SettingsPage() {
         Button,
         {
           variant: "danger",
-          onClick: () => toast.error("Account deletion requires confirmation. Contact support."),
+          onClick: () => setShowDeleteModal(true),
           children: [
             /* @__PURE__ */ jsx(Trash2, { className: "w-4 h-4" }),
             "Delete Account"
           ]
         }
       )
-    ] })
+    ] }),
+
+    /* Caution Modal Card */
+    showDeleteModal && /* @__PURE__ */ jsx("div", {
+      className: "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in",
+      children: /* @__PURE__ */ jsxs("div", {
+        className: "bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-red-100 space-y-5 animate-scale-up",
+        children: [
+          /* Header */
+          /* @__PURE__ */ jsxs("div", {
+            className: "flex items-center gap-3 text-red-600",
+            children: [
+              /* @__PURE__ */ jsx("div", {
+                className: "w-12 h-12 rounded-full bg-red-100 flex items-center justify-center shrink-0",
+                children: /* @__PURE__ */ jsx(AlertTriangle, { className: "w-6 h-6 text-red-600" })
+              }),
+              /* @__PURE__ */ jsxs("div", {
+                children: [
+                  /* @__PURE__ */ jsx("h3", { className: "text-lg font-bold font-display text-ink-950", children: "Delete Account" }),
+                  /* @__PURE__ */ jsx("p", { className: "text-xs text-red-600 font-medium", children: "Caution: This action is permanent" })
+                ]
+              })
+            ]
+          }),
+
+          /* Caution Card Body */
+          /* @__PURE__ */ jsx("div", {
+            className: "p-4 rounded-xl bg-red-50/80 border border-red-200 text-sm font-medium text-red-900 leading-relaxed flex items-start gap-2.5",
+            children: [
+              /* @__PURE__ */ jsx(AlertTriangle, { className: "w-5 h-5 text-red-500 shrink-0 mt-0.5" }),
+              /* @__PURE__ */ jsx("span", { children: "if u delete your account all your progress and data will be lost" })
+            ]
+          }),
+
+          /* Modal Actions (Cancel & Continue) */
+          /* @__PURE__ */ jsxs("div", {
+            className: "flex items-center justify-end gap-3 pt-2",
+            children: [
+              /* @__PURE__ */ jsx(Button, {
+                variant: "outline",
+                onClick: () => !deleting && setShowDeleteModal(false),
+                disabled: deleting,
+                className: "w-1/2 sm:w-auto",
+                children: "Cancel"
+              }),
+              /* @__PURE__ */ jsx(Button, {
+                variant: "danger",
+                onClick: handleConfirmDeleteAccount,
+                disabled: deleting,
+                className: "w-1/2 sm:w-auto",
+                children: deleting ? "Deleting..." : "Continue"
+              })
+            ]
+          })
+        ]
+      })
+    })
   ] });
 }
+
 export {
   SettingsPage as default
 };

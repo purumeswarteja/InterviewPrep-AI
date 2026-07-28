@@ -99,6 +99,12 @@ const passwordReset = async (email) => {
   });
 };
 
+const deleteAccount = async () => {
+  return request("/api/auth/delete-account", {
+    method: "DELETE"
+  });
+};
+
 const logout = () => {
   setToken(null);
 };
@@ -114,6 +120,7 @@ export const api = {
   createResumeAnalysis,
   getAnalytics,
   passwordReset,
+  deleteAccount,
   logout,
   getToken,
   setToken

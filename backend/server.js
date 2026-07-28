@@ -195,6 +195,26 @@ app.get('/api/analytics', authMiddleware, (req, res) => {
   res.json({ sessions });
 });
 
+app.delete('/api/auth/delete-account', authMiddleware, (req, res) => {
+  const userId = req.user.userId;
+  const db = readDb();
+
+  // Remove user
+  db.users = (db.users || []).filter((u) => u.id !== userId);
+
+  // Remove profile
+  db.profiles = (db.profiles || []).filter((p) => p.user_id !== userId);
+
+  // Remove interview sessions
+  db.interview_sessions = (db.interview_sessions || []).filter((s) => s.user_id !== userId);
+
+  // Remove resume analyses
+  db.resume_analyses = (db.resume_analyses || []).filter((r) => r.user_id !== userId);
+
+  writeDb(db);
+  res.json({ success: true, message: 'Account and all associated data deleted successfully.' });
+});
+
 app.post('/api/password-reset', (req, res) => {
   const { email } = req.body;
   if (!email) {
