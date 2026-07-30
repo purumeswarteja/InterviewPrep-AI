@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎯 InterviewPro AI
+# 🎯 InterviewPrep AI
 
 ### 🚀 Your AI-Powered Interview Preparation Companion
 
