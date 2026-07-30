@@ -21,7 +21,7 @@ Practice mock interviews, analyze your resume, track your progress, and land you
 
 ## 📖 About the Project
 
-**InterviewPro AI** is an AI-powered interview preparation platform that helps students and job seekers strengthen their interview skills through AI mock interviews, resume analysis, voice-based interactions, and detailed performance analytics.
+**InterviewPrep AI** is an AI-powered interview preparation platform that helps students and job seekers strengthen their interview skills through AI mock interviews, resume analysis, voice-based interactions, and detailed performance analytics.
 
 The platform provides realistic interview experiences with AI-generated questions, instant feedback, resume evaluation, progress tracking, and personalized insights to help users prepare confidently for technical and HR interviews.
 
