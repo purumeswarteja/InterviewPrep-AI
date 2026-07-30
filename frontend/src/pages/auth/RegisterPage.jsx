@@ -1,31 +1,44 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Sparkles, ArrowRight, Brain, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, User, Sparkles, ArrowRight, Brain, CheckCircle2, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+
+const passwordRules = [
+  { id: 'len',   label: 'At least 6 characters',       test: (p) => p.length >= 6 },
+  { id: 'upper', label: 'At least one uppercase letter', test: (p) => /[A-Z]/.test(p) },
+  { id: 'num',   label: 'At least one number',           test: (p) => /[0-9]/.test(p) },
+];
 
 export default function RegisterPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [pwTouched, setPwTouched] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
+  const failedRules = passwordRules.filter((r) => !r.test(password));
+
   const handleRegister = async (e) => {
     e.preventDefault();
+    setAuthError('');
     if (!fullName || !email || !password) {
       toast.error('Please fill in all fields.');
       return;
     }
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters long.');
+    if (failedRules.length > 0) {
+      setPwTouched(true);
+      toast.error('Password does not meet all requirements.');
       return;
     }
     setLoading(true);
     try {
       const res = await signUp(email, password, fullName);
       if (res?.error) {
+        setAuthError(res.error);
         toast.error(res.error);
       } else {
         toast.success('Account created successfully! Welcome aboard.');
@@ -33,7 +46,9 @@ export default function RegisterPage() {
       }
     } catch (err) {
       console.error('Register error:', err);
-      toast.error('Unable to connect to server. Please check your connection.');
+      const msg = 'Unable to connect to server. Please check your connection.';
+      setAuthError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -98,6 +113,11 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={handleRegister} className="space-y-4">
+            {authError && (
+              <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2 animate-fade-in">
+                <span>⚠️ {authError}</span>
+              </div>
+            )}
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
                 Full Name
@@ -141,12 +161,41 @@ export default function RegisterPage() {
                 <input
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); setPwTouched(true); }}
                   placeholder="Enter your password"
                   required
-                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm text-gray-900 transition"
+                  className={`w-full pl-11 pr-4 py-3 rounded-xl border outline-none text-sm text-gray-900 transition focus:ring-2 ${
+                    pwTouched && failedRules.length > 0
+                      ? 'border-red-400 focus:border-red-400 focus:ring-red-100'
+                      : pwTouched && failedRules.length === 0
+                      ? 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-100'
+                      : 'border-gray-200 focus:border-emerald-500 focus:ring-emerald-100'
+                  }`}
                 />
               </div>
+              {/* Password Requirements */}
+              {pwTouched && (
+                <ul className="mt-2 space-y-1">
+                  {passwordRules.map((rule) => {
+                    const passed = rule.test(password);
+                    return (
+                      <li key={rule.id} className={`flex items-center gap-1.5 text-xs font-medium ${
+                        passed ? 'text-emerald-600' : 'text-red-500'
+                      }`}>
+                        {passed
+                          ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                          : <XCircle className="w-3.5 h-3.5 shrink-0" />}
+                        {rule.label}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              {!pwTouched && (
+                <p className="mt-1.5 text-xs text-gray-400">
+                  Must be 6+ chars, include an uppercase letter &amp; a number.
+                </p>
+              )}
             </div>
 
             <button

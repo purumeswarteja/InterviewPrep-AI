@@ -8,11 +8,13 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setAuthError('');
     if (!email || !password) {
       toast.error('Please enter both email and password.');
       return;
@@ -21,14 +23,18 @@ export default function LoginPage() {
     try {
       const res = await signIn(email, password);
       if (res?.error) {
-        toast.error(res.error);
+        const errorMsg = 'Credentials not matched. Please try again.';
+        setAuthError(errorMsg);
+        toast.error(errorMsg);
       } else {
         toast.success('Signed in successfully!');
         navigate('/app');
       }
     } catch (err) {
       console.error('Login error:', err);
-      toast.error('Unable to connect to server. Please check your connection.');
+      const errorMsg = 'Unable to connect to server. Please check your connection.';
+      setAuthError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -93,6 +99,11 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {authError && (
+              <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2 animate-fade-in">
+                <span>⚠️ {authError}</span>
+              </div>
+            )}
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
                 Email Address

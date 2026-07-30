@@ -38,6 +38,10 @@ const signup = async (email, password, full_name) => {
   });
   if (!data.error && data.token) {
     setToken(data.token);
+    if (data.user?.id) {
+      localStorage.setItem(`user_pw_${data.user.id}`, password);
+    }
+    sessionStorage.setItem('current_user_pw', password);
   }
   return data;
 };
@@ -49,6 +53,10 @@ const login = async (email, password) => {
   });
   if (!data.error && data.token) {
     setToken(data.token);
+    if (data.user?.id) {
+      localStorage.setItem(`user_pw_${data.user.id}`, password);
+    }
+    sessionStorage.setItem('current_user_pw', password);
   }
   return data;
 };
@@ -107,6 +115,7 @@ const deleteAccount = async () => {
 
 const logout = () => {
   setToken(null);
+  sessionStorage.removeItem('current_user_pw');
 };
 
 export const api = {

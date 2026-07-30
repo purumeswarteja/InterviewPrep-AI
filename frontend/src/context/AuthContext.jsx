@@ -6,25 +6,32 @@ function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [userPassword, setUserPassword] = useState('');
   const [loading, setLoading] = useState(true);
+
   const fetchCurrent = useCallback(async () => {
     const data = await api.fetchCurrent();
     if (!data.error && data.user) {
       setUser(data.user);
       setProfile(data.profile || null);
       setSession(data.user);
+      const stored = localStorage.getItem(`user_pw_${data.user.email.toLowerCase()}`);
+      if (stored) setUserPassword(stored);
     } else {
       setUser(null);
       setProfile(null);
       setSession(null);
+      setUserPassword('');
       api.logout();
     }
     return data;
   }, []);
+
   const refreshProfile = useCallback(async () => {
     const data = await fetchCurrent();
     return data;
   }, [fetchCurrent]);
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -38,26 +45,35 @@ function AuthProvider({ children }) {
       mounted = false;
     };
   }, [fetchCurrent]);
+
   const signUp = async (email, password, fullName) => {
     const data = await api.signup(email, password, fullName);
     if (!data.error) {
+      localStorage.setItem(`user_pw_${email.toLowerCase()}`, password);
+      setUserPassword(password);
       await fetchCurrent();
     }
     return data;
   };
+
   const signIn = async (email, password) => {
     const data = await api.login(email, password);
     if (!data.error) {
+      localStorage.setItem(`user_pw_${email.toLowerCase()}`, password);
+      setUserPassword(password);
       await fetchCurrent();
     }
     return data;
   };
+
   const signOut = async () => {
     api.logout();
     setUser(null);
     setProfile(null);
     setSession(null);
+    setUserPassword('');
   };
+
   const deleteAccount = async () => {
     const data = await api.deleteAccount();
     if (!data.error) {
@@ -65,10 +81,12 @@ function AuthProvider({ children }) {
       setUser(null);
       setProfile(null);
       setSession(null);
+      setUserPassword('');
     }
     return data;
   };
-  return /* @__PURE__ */ jsx(AuthContext.Provider, { value: { session, user, profile, loading, signUp, signIn, signOut, deleteAccount, refreshProfile }, children });
+
+  return /* @__PURE__ */ jsx(AuthContext.Provider, { value: { session, user, profile, userPassword, loading, signUp, signIn, signOut, deleteAccount, refreshProfile }, children });
 }
 function useAuth() {
   const ctx = useContext(AuthContext);

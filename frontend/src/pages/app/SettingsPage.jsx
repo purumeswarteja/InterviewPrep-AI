@@ -9,13 +9,15 @@ import { Card, Button } from "../../components/ui";
 import { cn } from "../../lib/utils";
 
 function SettingsPage() {
-  const { user, profile, signOut, deleteAccount } = useAuth();
+  const { user, profile, userPassword, signOut, deleteAccount } = useAuth();
   const navigate = useNavigate();
   const [weeklyGoal, setWeeklyGoal] = useState(profile?.weekly_goal || 5);
   const [monthlyGoal, setMonthlyGoal] = useState(profile?.monthly_goal || 20);
   const [notifications, setNotifications] = useState({ email: true, push: false, streak: true, weekly: true });
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const displayPw = userPassword || (user?.email && localStorage.getItem(`user_pw_${user.email.toLowerCase()}`)) || sessionStorage.getItem('current_user_pw') || '';
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -156,12 +158,23 @@ function SettingsPage() {
           ] }),
           /* @__PURE__ */ jsx("span", { className: "text-xs text-brand-600 font-medium", children: "Verified" })
         ] }),
-        /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between p-3 rounded-xl border border-ink-100", children: [
-          /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx("p", { className: "text-sm font-medium text-ink-900", children: "Password" }),
-            /* @__PURE__ */ jsx("p", { className: "text-xs text-ink-500", children: "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" })
+        /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between p-3 rounded-xl border border-ink-100 gap-3", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex-1 min-w-0", children: [
+            /* @__PURE__ */ jsx("p", { className: "text-sm font-medium text-ink-900 mb-0.5", children: "Password" }),
+            /* @__PURE__ */ jsx("p", {
+              className: "text-xs font-mono text-ink-600 select-all",
+              children: showPassword
+                ? (displayPw || "•••••••• (Sign in again to reveal)")
+                : "••••••••••"
+            })
           ] }),
-          /* @__PURE__ */ jsx("button", { onClick: () => setShowPassword(!showPassword), className: "text-ink-400 hover:text-ink-600", children: showPassword ? /* @__PURE__ */ jsx(EyeOff, { className: "w-4 h-4" }) : /* @__PURE__ */ jsx(Eye, { className: "w-4 h-4" }) })
+          /* @__PURE__ */ jsx("button", {
+            type: "button",
+            onClick: () => setShowPassword(!showPassword),
+            className: "p-2 rounded-lg text-ink-400 hover:text-ink-600 hover:bg-ink-50 transition-colors shrink-0",
+            title: showPassword ? "Hide password" : "Show password",
+            children: showPassword ? /* @__PURE__ */ jsx(EyeOff, { className: "w-4 h-4" }) : /* @__PURE__ */ jsx(Eye, { className: "w-4 h-4" })
+          })
         ] }),
         /* @__PURE__ */ jsxs(
           "button",

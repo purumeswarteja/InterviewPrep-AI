@@ -1,33 +1,34 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import User from './models/User.js';
+import Profile from './models/Profile.js';
+import InterviewSession from './models/InterviewSession.js';
+import ResumeAnalysis from './models/ResumeAnalysis.js';
+
 const app = express();
 const port = process.env.PORT || 4000;
-const dbPath = path.join(__dirname, 'db.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/interviewprep';
 
 app.use(cors());
 app.use(express.json());
 
-const readDb = () => {
-  if (!fs.existsSync(dbPath)) {
-    fs.writeFileSync(dbPath, JSON.stringify({ users: [], profiles: [], interview_sessions: [], resume_analyses: [] }, null, 2));
-  }
-  return JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
-};
+// ─── DB Connection ───────────────────────────────────────────────────────────
+mongoose
+  .connect(MONGODB_URI)
+  .then(() => console.log('✅ MongoDB connected'))
+  .catch((err) => {
+    console.error('❌ MongoDB connection error:', err.message);
+    process.exit(1);
+  });
 
-const writeDb = (data) => {
-  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
-};
-
+// ─── Auth Middleware ──────────────────────────────────────────────────────────
 const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -38,196 +39,209 @@ const authMiddleware = (req, res, next) => {
     const payload = jwt.verify(token, JWT_SECRET);
     req.user = payload;
     next();
-  } catch (error) {
+  } catch {
     return res.status(401).json({ error: 'Invalid token' });
   }
 };
 
+// ─── Auth Routes ──────────────────────────────────────────────────────────────
+
+// Signup
 app.post('/api/auth/signup', async (req, res) => {
-  const { email, password, full_name } = req.body;
-  if (!email || !password || !full_name) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-  const db = readDb();
-  const existing = db.users.find((u) => u.email === email.toLowerCase());
-  if (existing) {
-    return res.status(400).json({ error: 'Email already registered' });
-  }
-  const hashed = await bcrypt.hash(password, 10);
-  const user = { id: uuidv4(), email: email.toLowerCase(), password: hashed, created_at: new Date().toISOString() };
-  db.users.push(user);
-  db.profiles.push({
-    id: uuidv4(),
-    user_id: user.id,
-    full_name,
-    bio: '',
-    phone: '',
-    location: '',
-    linkedin_url: '',
-    github_url: '',
-    portfolio_url: '',
-    target_role: '',
-    experience_level: 'junior',
-    skills: [],
-    streak_count: 0,
-    longest_streak: 0,
-    last_active_date: null,
-    weekly_goal: 5,
-    monthly_goal: 20,
-    total_interviews: 0,
-    avg_score: 0,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  });
-  writeDb(db);
-  const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-  res.json({ token, user: { id: user.id, email: user.email } });
-});
-
-app.post('/api/auth/login', async (req, res) => {
-  const { email, password } = req.body;
-  const db = readDb();
-  const user = db.users.find((u) => u.email === email.toLowerCase());
-  if (!user) {
-    return res.status(400).json({ error: 'Invalid login credentials' });
-  }
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid) {
-    return res.status(400).json({ error: 'Invalid login credentials' });
-  }
-  const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-  res.json({ token, user: { id: user.id, email: user.email } });
-});
-
-app.get('/api/auth/me', authMiddleware, (req, res) => {
-  const db = readDb();
-  const profile = db.profiles.find((p) => p.user_id === req.user.userId);
-  if (!profile) {
-    return res.status(404).json({ error: 'Profile not found' });
-  }
-  res.json({ user: { id: req.user.userId, email: req.user.email }, profile });
-});
-
-app.put('/api/profile', authMiddleware, (req, res) => {
-  const db = readDb();
-  const profile = db.profiles.find((p) => p.user_id === req.user.userId);
-  if (!profile) {
-    return res.status(404).json({ error: 'Profile not found' });
-  }
-  Object.assign(profile, req.body, { updated_at: new Date().toISOString() });
-  writeDb(db);
-  res.json({ profile });
-});
-
-app.get('/api/sessions', authMiddleware, (req, res) => {
-  const db = readDb();
-  const sessions = db.interview_sessions.filter((s) => s.user_id === req.user.userId);
-  res.json({ sessions });
-});
-
-app.post('/api/sessions', authMiddleware, (req, res) => {
-  const db = readDb();
-  const session = {
-    id: uuidv4(),
-    user_id: req.user.userId,
-    type: req.body.type || 'mock',
-    topic: req.body.topic || 'Practice',
-    difficulty: req.body.difficulty || 'medium',
-    score: req.body.score || null,
-    duration_seconds: req.body.duration_seconds || null,
-    questions: req.body.questions || [],
-    answers: req.body.answers || [],
-    feedback: req.body.feedback || {},
-    status: req.body.status || 'completed',
-    created_at: new Date().toISOString()
-  };
-  db.interview_sessions.push(session);
-  const profile = db.profiles.find((p) => p.user_id === req.user.userId);
-  if (profile) {
-    profile.total_interviews = (profile.total_interviews || 0) + 1;
-    if (session.score !== null) {
-      const userSessions = db.interview_sessions.filter((s) => s.user_id === req.user.userId && s.score !== null);
-      profile.avg_score = userSessions.reduce((sum, item) => sum + Number(item.score), 0) / userSessions.length;
+  try {
+    const { email, password, full_name } = req.body;
+    if (!email || !password || !full_name) {
+      return res.status(400).json({ error: 'Missing required fields' });
     }
-    profile.updated_at = new Date().toISOString();
+    const existing = await User.findOne({ email: email.toLowerCase() });
+    if (existing) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+    const hashed = await bcrypt.hash(password, 10);
+    const userId = uuidv4();
+    const user = await User.create({
+      id: userId,
+      email: email.toLowerCase(),
+      password: hashed,
+    });
+    await Profile.create({
+      id: uuidv4(),
+      user_id: userId,
+      full_name,
+    });
+    const token = jwt.sign({ userId, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: userId, email: user.email } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-  writeDb(db);
-  res.json({ session });
 });
 
-app.delete('/api/sessions/:id', authMiddleware, (req, res) => {
-  const db = readDb();
-  const index = db.interview_sessions.findIndex((s) => s.id === req.params.id && s.user_id === req.user.userId);
-  if (index === -1) {
-    return res.status(404).json({ error: 'Session not found' });
+// Login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) return res.status(400).json({ error: 'Credentials not matched. Please try again.' });
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) return res.status(400).json({ error: 'Credentials not matched. Please try again.' });
+    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: user.id, email: user.email } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-  db.interview_sessions.splice(index, 1);
-  writeDb(db);
-  res.json({ success: true });
 });
 
-app.post('/api/resume-analyses', authMiddleware, (req, res) => {
-  const db = readDb();
-  const analysis = {
-    id: uuidv4(),
-    user_id: req.user.userId,
-    file_name: req.body.file_name || '',
-    resume_text: req.body.resume_text || '',
-    ats_score: req.body.ats_score || 0,
-    grammar_score: req.body.grammar_score || 0,
-    keyword_score: req.body.keyword_score || 0,
-    overall_score: req.body.overall_score || 0,
-    keywords_found: req.body.keywords_found || [],
-    keywords_missing: req.body.keywords_missing || [],
-    suggestions: req.body.suggestions || [],
-    strengths: req.body.strengths || [],
-    weaknesses: req.body.weaknesses || [],
-    created_at: new Date().toISOString()
-  };
-  db.resume_analyses.push(analysis);
-  writeDb(db);
-  res.json({ analysis });
+// Get current user + profile
+app.get('/api/auth/me', authMiddleware, async (req, res) => {
+  try {
+    const profile = await Profile.findOne({ user_id: req.user.userId });
+    if (!profile) return res.status(404).json({ error: 'Profile not found' });
+    res.json({ user: { id: req.user.userId, email: req.user.email }, profile });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.get('/api/analytics', authMiddleware, (req, res) => {
-  const db = readDb();
-  const sessions = db.interview_sessions.filter((s) => s.user_id === req.user.userId);
-  res.json({ sessions });
+// Delete account
+app.delete('/api/auth/delete-account', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    await User.deleteOne({ id: userId });
+    await Profile.deleteOne({ user_id: userId });
+    await InterviewSession.deleteMany({ user_id: userId });
+    await ResumeAnalysis.deleteMany({ user_id: userId });
+    res.json({ success: true, message: 'Account and all associated data deleted successfully.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.delete('/api/auth/delete-account', authMiddleware, (req, res) => {
-  const userId = req.user.userId;
-  const db = readDb();
+// ─── Profile Routes ───────────────────────────────────────────────────────────
 
-  // Remove user
-  db.users = (db.users || []).filter((u) => u.id !== userId);
-
-  // Remove profile
-  db.profiles = (db.profiles || []).filter((p) => p.user_id !== userId);
-
-  // Remove interview sessions
-  db.interview_sessions = (db.interview_sessions || []).filter((s) => s.user_id !== userId);
-
-  // Remove resume analyses
-  db.resume_analyses = (db.resume_analyses || []).filter((r) => r.user_id !== userId);
-
-  writeDb(db);
-  res.json({ success: true, message: 'Account and all associated data deleted successfully.' });
+app.put('/api/profile', authMiddleware, async (req, res) => {
+  try {
+    const profile = await Profile.findOneAndUpdate(
+      { user_id: req.user.userId },
+      { ...req.body, updated_at: new Date().toISOString() },
+      { new: true }
+    );
+    if (!profile) return res.status(404).json({ error: 'Profile not found' });
+    res.json({ profile });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/password-reset', (req, res) => {
+// ─── Interview Session Routes ─────────────────────────────────────────────────
+
+app.get('/api/sessions', authMiddleware, async (req, res) => {
+  try {
+    const sessions = await InterviewSession.find({ user_id: req.user.userId }).sort({ created_at: -1 });
+    res.json({ sessions });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/sessions', authMiddleware, async (req, res) => {
+  try {
+    const session = await InterviewSession.create({
+      id: uuidv4(),
+      user_id: req.user.userId,
+      type: req.body.type || 'mock',
+      topic: req.body.topic || 'Practice',
+      difficulty: req.body.difficulty || 'medium',
+      score: req.body.score ?? null,
+      duration_seconds: req.body.duration_seconds ?? null,
+      questions: req.body.questions || [],
+      answers: req.body.answers || [],
+      feedback: req.body.feedback || {},
+      status: req.body.status || 'completed',
+    });
+
+    // Update profile stats
+    const allSessions = await InterviewSession.find({ user_id: req.user.userId });
+    const scoredSessions = allSessions.filter((s) => s.score !== null);
+    const avg_score = scoredSessions.length
+      ? scoredSessions.reduce((sum, s) => sum + Number(s.score), 0) / scoredSessions.length
+      : 0;
+
+    await Profile.findOneAndUpdate(
+      { user_id: req.user.userId },
+      {
+        total_interviews: allSessions.length,
+        avg_score,
+        updated_at: new Date().toISOString(),
+      }
+    );
+
+    res.json({ session });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/sessions/:id', authMiddleware, async (req, res) => {
+  try {
+    const result = await InterviewSession.findOneAndDelete({
+      id: req.params.id,
+      user_id: req.user.userId,
+    });
+    if (!result) return res.status(404).json({ error: 'Session not found' });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Resume Analysis Routes ───────────────────────────────────────────────────
+
+app.post('/api/resume-analyses', authMiddleware, async (req, res) => {
+  try {
+    const analysis = await ResumeAnalysis.create({
+      id: uuidv4(),
+      user_id: req.user.userId,
+      file_name: req.body.file_name || '',
+      resume_text: req.body.resume_text || '',
+      ats_score: req.body.ats_score || 0,
+      grammar_score: req.body.grammar_score || 0,
+      keyword_score: req.body.keyword_score || 0,
+      overall_score: req.body.overall_score || 0,
+      keywords_found: req.body.keywords_found || [],
+      keywords_missing: req.body.keywords_missing || [],
+      suggestions: req.body.suggestions || [],
+      strengths: req.body.strengths || [],
+      weaknesses: req.body.weaknesses || [],
+    });
+    res.json({ analysis });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Analytics Route ──────────────────────────────────────────────────────────
+
+app.get('/api/analytics', authMiddleware, async (req, res) => {
+  try {
+    const sessions = await InterviewSession.find({ user_id: req.user.userId }).sort({ created_at: -1 });
+    res.json({ sessions });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Password Reset (stub) ────────────────────────────────────────────────────
+
+app.post('/api/password-reset', async (req, res) => {
   const { email } = req.body;
-  if (!email) {
-    return res.status(400).json({ error: 'Email is required' });
-  }
-  const db = readDb();
-  const user = db.users.find((u) => u.email === email.toLowerCase());
-  if (!user) {
-    return res.status(200).json({ message: 'If that email exists, a reset link has been sent.' });
-  }
+  if (!email) return res.status(400).json({ error: 'Email is required' });
+  const user = await User.findOne({ email: email.toLowerCase() });
+  if (!user) return res.status(200).json({ message: 'If that email exists, a reset link has been sent.' });
   res.json({ message: 'Password reset request received. (Not implemented in mock backend)' });
 });
 
+// ─── Start Server ─────────────────────────────────────────────────────────────
+
 app.listen(port, () => {
-  console.log(`Express backend running on http://localhost:${port}`);
+  console.log(`🚀 Express backend running on http://localhost:${port}`);
 });

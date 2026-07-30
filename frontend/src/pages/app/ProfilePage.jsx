@@ -74,7 +74,7 @@ export default function ProfilePage() {
     github_url: "",
     portfolio_url: "",
     target_role: "",
-    experience_level: "junior",
+    experience_level: "",
     skills: []
   });
 
@@ -89,7 +89,7 @@ export default function ProfilePage() {
         github_url: profile.github_url || "",
         portfolio_url: profile.portfolio_url || "",
         target_role: profile.target_role || "",
-        experience_level: profile.experience_level || "junior",
+        experience_level: profile.experience_level || "",
         skills: Array.isArray(profile.skills) ? profile.skills : []
       });
     }
@@ -150,7 +150,7 @@ export default function ProfilePage() {
         github_url: profile.github_url || "",
         portfolio_url: profile.portfolio_url || "",
         target_role: profile.target_role || "",
-        experience_level: profile.experience_level || "junior",
+        experience_level: profile.experience_level || "",
         skills: Array.isArray(profile.skills) ? profile.skills : []
       });
     }
@@ -253,9 +253,11 @@ export default function ProfilePage() {
           <div className="flex-1 text-center sm:text-left space-y-1.5">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <h2 className="font-display font-bold text-2xl">{currentFullName}</h2>
-              <span className="inline-block self-center sm:self-auto px-2.5 py-0.5 rounded-full bg-white/20 text-white text-xs font-semibold uppercase tracking-wider">
-                {form.experience_level || "Junior"} Level
-              </span>
+              {form.experience_level && (
+                <span className="inline-block self-center sm:self-auto px-2.5 py-0.5 rounded-full bg-white/20 text-white text-xs font-semibold uppercase tracking-wider">
+                  {form.experience_level} Level
+                </span>
+              )}
             </div>
             <p className="text-white/90 text-sm flex items-center justify-center sm:justify-start gap-1.5">
               <Mail className="w-4 h-4 text-white/80" />
@@ -355,7 +357,7 @@ export default function ProfilePage() {
               </div>
               <div className="space-y-1">
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Experience Level</span>
-                <p className="text-gray-900 font-medium capitalize">{form.experience_level || "Junior"}</p>
+                <p className="text-gray-900 font-medium capitalize">{form.experience_level || "Not specified"}</p>
               </div>
             </div>
 
