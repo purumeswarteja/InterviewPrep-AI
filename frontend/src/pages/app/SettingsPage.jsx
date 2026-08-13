@@ -17,7 +17,10 @@ function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const displayPw = userPassword || (user?.email && localStorage.getItem(`user_pw_${user.email.toLowerCase()}`)) || sessionStorage.getItem('current_user_pw') || '';
+  const displayPw = userPassword ||
+    (user?.email && localStorage.getItem(`user_pw_${user.email.toLowerCase()}`)) ||
+    (user?.id && localStorage.getItem(`user_pw_${user.id}`)) ||
+    sessionStorage.getItem('current_user_pw') || '';
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
 

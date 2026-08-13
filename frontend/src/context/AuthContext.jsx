@@ -15,7 +15,9 @@ function AuthProvider({ children }) {
       setUser(data.user);
       setProfile(data.profile || null);
       setSession(data.user);
-      const stored = localStorage.getItem(`user_pw_${data.user.email.toLowerCase()}`);
+      const stored = (data.user.email && localStorage.getItem(`user_pw_${data.user.email.toLowerCase()}`)) ||
+                     (data.user.id && localStorage.getItem(`user_pw_${data.user.id}`)) ||
+                     sessionStorage.getItem('current_user_pw');
       if (stored) setUserPassword(stored);
     } else {
       setUser(null);

@@ -1,10 +1,10 @@
 <div align="center">
 
-# 🎯 InterviewPrep AI
+# 🎯 InterviewPro AI
 
 ### 🚀 Your AI-Powered Interview Preparation Companion
 
-Practice mock interviews, analyze your resume, track your progress, and land your dream job.
+Practice mock interviews, analyze your resume, track your progress, and land your dream job with confidence.
 
 <p>
   <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white" />
@@ -21,7 +21,7 @@ Practice mock interviews, analyze your resume, track your progress, and land you
 
 ## 📖 About the Project
 
-**InterviewPrep AI** is an AI-powered interview preparation platform that helps students and job seekers strengthen their interview skills through AI mock interviews, resume analysis, voice-based interactions, and detailed performance analytics.
+**InterviewPro AI** is a full-stack AI-powered interview preparation platform designed to help students and job seekers strengthen their interview skills through AI mock interviews, resume analysis, 2-way voice-based interactions, and detailed performance analytics.
 
 The platform provides realistic interview experiences with AI-generated questions, instant feedback, resume evaluation, progress tracking, and personalized insights to help users prepare confidently for technical and HR interviews.
 
@@ -35,10 +35,11 @@ The platform provides realistic interview experiences with AI-generated question
 
 ## 🤖 AI Mock Interviews
 
-- Practice technical interview sessions
+- Technical interview practice
 - HR interview simulations
 - AI-generated interview questions
 - Instant feedback and scoring
+- Session history tracking
 
 </td>
 
@@ -49,7 +50,7 @@ The platform provides realistic interview experiences with AI-generated question
 - Upload resume PDFs
 - ATS score analysis
 - Grammar checking
-- Keyword analysis
+- Keyword analysis & matching
 - Actionable improvement suggestions
 
 </td>
@@ -62,7 +63,7 @@ The platform provides realistic interview experiences with AI-generated question
 
 - Built-in Speech-to-Text
 - Text-to-Speech interview questions
-- Interactive voice interview experience
+- Interactive 2-way voice experience
 
 </td>
 
@@ -70,11 +71,10 @@ The platform provides realistic interview experiences with AI-generated question
 
 ## 📊 Analytics Dashboard
 
-- Session history
+- Session history tracking
 - Average interview scores
-- Performance trends
-- Interactive charts
-- Practice streak tracking
+- Performance trends & charts
+- Practice streak & goals tracking
 
 </td>
 </tr>
@@ -105,44 +105,21 @@ The platform provides realistic interview experiences with AI-generated question
 
 ## 👤 Profile Management
 
-- Upload profile photo
-- Update bio
-- Manage skills
-- Set target role
+- Profile photo upload
+- Skills & target role management
+- Career goals tracking
 - Optional experience level
 
 </td>
 
 <td width="50%">
 
-## 🔐 Secure Authentication
+## 🔐 Secure Authentication & Management
 
 - JWT-based authentication
-- Secure signup & login
-- bcrypt password hashing
-- Delete account with all associated data
-- Protected API routes
-
-</td>
-</tr>
-
-<tr>
-<td width="50%">
-
-## 🔑 Interactive Authentication
-
 - Live password requirement validation
 - Password visibility toggle
-- Clear authentication error alerts
-
-</td>
-
-<td width="50%">
-
-## 🗑️ Account Management
-
-- One-click account deletion
-- Removes all associated user data securely
+- One-click account deletion with full data cleanup
 
 </td>
 </tr>
@@ -181,6 +158,57 @@ The platform provides realistic interview experiences with AI-generated question
 
 ---
 
+# 📦 Required Packages & Dependencies
+
+Below is a detailed list of all required NPM packages installed in this project, along with installation commands and statements explaining their purpose.
+
+## 🎨 Frontend Required Packages (`frontend/package.json`)
+
+To install all frontend packages, run `npm install` inside the `frontend` directory:
+
+```bash
+cd frontend
+npm install react react-dom react-router-dom lucide-react framer-motion recharts react-hot-toast pdfjs-dist
+npm install -D vite @vitejs/plugin-react tailwindcss postcss autoprefixer typescript
+```
+
+| Package Name | Installation Command | Description & Purpose Statement |
+|--------------|----------------------|---------------------------------|
+| **`react`** & **`react-dom`** | `npm i react react-dom` | Core React library for building component-based user interfaces and rendering into the DOM. |
+| **`react-router-dom`** | `npm i react-router-dom` | Enables client-side single-page routing and seamless navigation between pages. |
+| **`lucide-react`** | `npm i lucide-react` | Clean and customizable vector icons for UI aesthetics. |
+| **`framer-motion`** | `npm i framer-motion` | Animation library for fluid page transitions, UI animations, and micro-interactions. |
+| **`recharts`** | `npm i recharts` | Charting library for rendering interactive graphs and visual analytics on the dashboard. |
+| **`react-hot-toast`** | `npm i react-hot-toast` | Notification system for toast alerts and status feedback. |
+| **`pdfjs-dist`** | `npm i pdfjs-dist` | PDF parser used for extracting raw text from uploaded user resumes client-side. |
+| **`vite`** | `npm i -D vite @vitejs/plugin-react` | Fast frontend build tool and development server with instant HMR. |
+| **`tailwindcss`** | `npm i -D tailwindcss postcss autoprefixer` | Utility-first CSS framework for responsive layout design and custom styling. |
+
+---
+
+## ⚙️ Backend Required Packages (`backend/package.json`)
+
+To install all backend packages, run `npm install` inside the `backend` directory:
+
+```bash
+cd backend
+npm install express mongoose dotenv bcryptjs jsonwebtoken cors uuid
+npm install -D nodemon
+```
+
+| Package Name | Installation Command | Description & Purpose Statement |
+|--------------|----------------------|---------------------------------|
+| **`express`** | `npm i express` | Web framework for Node.js to create REST API endpoints and HTTP route handlers. |
+| **`mongoose`** | `npm i mongoose` | MongoDB Object Data Modeling (ODM) library for database operations and schema definitions. |
+| **`dotenv`** | `npm i dotenv` | Loads environment variables from `.env` configuration file into `process.env`. |
+| **`bcryptjs`** | `npm i bcryptjs` | Password-hashing library for encrypting user passwords before database persistence. |
+| **`jsonwebtoken`** | `npm i jsonwebtoken` | Implements JSON Web Tokens (JWT) for secure state-less user authentication. |
+| **`cors`** | `npm i cors` | Express middleware to enable Cross-Origin Resource Sharing between frontend and backend. |
+| **`uuid`** | `npm i uuid` | Generates RFC4122 compliant unique UUIDs for user records and sessions. |
+| **`nodemon`** | `npm i -D nodemon` | Utility that automatically restarts the Express server when file modifications occur. |
+
+---
+
 # 📂 Project Structure
 
 ```text
@@ -190,17 +218,63 @@ InterviewPro-AI/
 │   ├── src/
 │   │   ├── components/     # Reusable UI Components
 │   │   ├── pages/          # Route Pages
-│   │   ├── context/        # Global State
+│   │   ├── context/        # Global State (Auth, Theme)
 │   │   └── ...
 │   ├── index.html
 │   └── package.json
 │
 └── backend/
-    ├── models/             # User, Profile, Session, Resume
-    ├── server.js           # Express Server
+    ├── models/             # User, Profile, Session, Resume Schemas
+    ├── server.js           # Express Server & REST API Routes
     ├── .env                # MongoDB URI & JWT Secret
     └── package.json
 ```
+
+---
+
+# 🚀 Getting Started
+
+## Prerequisites
+
+Make sure you have installed:
+* Node.js v18+
+* npm
+* MongoDB running locally (or remote MongoDB URI)
+
+---
+
+## 📥 Clone Repository
+
+```bash
+git clone https://github.com/purumeswarteja/InterviewPro-AI.git
+cd InterviewPro-AI
+```
+
+---
+
+## ⚙️ Backend Setup
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+Backend server runs on `http://localhost:4000`.
+
+---
+
+## 🎨 Frontend Setup
+
+Open another terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend application runs on `http://localhost:5173`.
 
 ---
 
@@ -221,9 +295,6 @@ InterviewPro-AI/
 
 ---
 
-
----
-
 <div align="center">
 
 ## 👨‍💻 Developed by **Eswar Teja Purum**
@@ -233,7 +304,5 @@ InterviewPro-AI/
 <img src="https://img.shields.io/badge/GitHub-purumeswarteja-181717?logo=github&logoColor=white" />
 </a>
 </p>
-
-
 
 </div>

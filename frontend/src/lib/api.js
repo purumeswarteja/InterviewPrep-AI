@@ -41,6 +41,9 @@ const signup = async (email, password, full_name) => {
     if (data.user?.id) {
       localStorage.setItem(`user_pw_${data.user.id}`, password);
     }
+    if (data.user?.email) {
+      localStorage.setItem(`user_pw_${data.user.email.toLowerCase()}`, password);
+    }
     sessionStorage.setItem('current_user_pw', password);
   }
   return data;
@@ -55,6 +58,9 @@ const login = async (email, password) => {
     setToken(data.token);
     if (data.user?.id) {
       localStorage.setItem(`user_pw_${data.user.id}`, password);
+    }
+    if (data.user?.email) {
+      localStorage.setItem(`user_pw_${data.user.email.toLowerCase()}`, password);
     }
     sessionStorage.setItem('current_user_pw', password);
   }
