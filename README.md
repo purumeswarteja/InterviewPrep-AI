@@ -162,12 +162,6 @@ The platform provides realistic interview experiences with AI-generated question
 
 ### 🎨 Frontend Packages (`frontend/package.json`)
 
-To install all frontend packages at once:
-```bash
-cd frontend
-npm install react react-dom react-router-dom lucide-react framer-motion recharts react-hot-toast pdfjs-dist
-npm install -D vite @vitejs/plugin-react tailwindcss postcss autoprefixer
-```
 
 #### Individual Package Installation Commands:
 
@@ -220,12 +214,6 @@ npm install -D vite @vitejs/plugin-react tailwindcss postcss autoprefixer
 
 ### ⚙️ Backend Packages (`backend/package.json`)
 
-To install all backend packages at once:
-```bash
-cd backend
-npm install express mongoose dotenv bcryptjs jsonwebtoken cors uuid
-npm install -D nodemon
-```
 
 #### Individual Package Installation Commands:
 
