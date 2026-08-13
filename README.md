@@ -158,54 +158,35 @@ The platform provides realistic interview experiences with AI-generated question
 
 ---
 
-# 📦 Required Packages & Dependencies
+# 📦 Required Packages
 
-Below is a detailed list of all required NPM packages installed in this project, along with installation commands and statements explaining their purpose.
-
-## 🎨 Frontend Required Packages (`frontend/package.json`)
-
-To install all frontend packages, run `npm install` inside the `frontend` directory:
+### 🎨 Frontend Dependencies (`frontend/`)
 
 ```bash
-cd frontend
 npm install react react-dom react-router-dom lucide-react framer-motion recharts react-hot-toast pdfjs-dist
-npm install -D vite @vitejs/plugin-react tailwindcss postcss autoprefixer typescript
 ```
 
-| Package Name | Installation Command | Description & Purpose Statement |
-|--------------|----------------------|---------------------------------|
-| **`react`** & **`react-dom`** | `npm i react react-dom` | Core React library for building component-based user interfaces and rendering into the DOM. |
-| **`react-router-dom`** | `npm i react-router-dom` | Enables client-side single-page routing and seamless navigation between pages. |
-| **`lucide-react`** | `npm i lucide-react` | Clean and customizable vector icons for UI aesthetics. |
-| **`framer-motion`** | `npm i framer-motion` | Animation library for fluid page transitions, UI animations, and micro-interactions. |
-| **`recharts`** | `npm i recharts` | Charting library for rendering interactive graphs and visual analytics on the dashboard. |
-| **`react-hot-toast`** | `npm i react-hot-toast` | Notification system for toast alerts and status feedback. |
-| **`pdfjs-dist`** | `npm i pdfjs-dist` | PDF parser used for extracting raw text from uploaded user resumes client-side. |
-| **`vite`** | `npm i -D vite @vitejs/plugin-react` | Fast frontend build tool and development server with instant HMR. |
-| **`tailwindcss`** | `npm i -D tailwindcss postcss autoprefixer` | Utility-first CSS framework for responsive layout design and custom styling. |
+- **`react` / `react-dom`** — Core UI component framework & DOM rendering engine
+- **`react-router-dom`** — Single-page routing & seamless client navigation
+- **`lucide-react`** — Lightweight vector icons for modern UI elements
+- **`framer-motion`** — Smooth animations, transitions, and interactive micro-UI
+- **`recharts`** — Interactive charting library for analytics visualization
+- **`react-hot-toast`** — Clean toast notification alerts for user feedback
+- **`pdfjs-dist`** — Client-side resume PDF parsing & text extraction
 
 ---
 
-## ⚙️ Backend Required Packages (`backend/package.json`)
-
-To install all backend packages, run `npm install` inside the `backend` directory:
+### ⚙️ Backend Dependencies (`backend/`)
 
 ```bash
-cd backend
 npm install express mongoose dotenv bcryptjs jsonwebtoken cors uuid
-npm install -D nodemon
 ```
 
-| Package Name | Installation Command | Description & Purpose Statement |
-|--------------|----------------------|---------------------------------|
-| **`express`** | `npm i express` | Web framework for Node.js to create REST API endpoints and HTTP route handlers. |
-| **`mongoose`** | `npm i mongoose` | MongoDB Object Data Modeling (ODM) library for database operations and schema definitions. |
-| **`dotenv`** | `npm i dotenv` | Loads environment variables from `.env` configuration file into `process.env`. |
-| **`bcryptjs`** | `npm i bcryptjs` | Password-hashing library for encrypting user passwords before database persistence. |
-| **`jsonwebtoken`** | `npm i jsonwebtoken` | Implements JSON Web Tokens (JWT) for secure state-less user authentication. |
-| **`cors`** | `npm i cors` | Express middleware to enable Cross-Origin Resource Sharing between frontend and backend. |
-| **`uuid`** | `npm i uuid` | Generates RFC4122 compliant unique UUIDs for user records and sessions. |
-| **`nodemon`** | `npm i -D nodemon` | Utility that automatically restarts the Express server when file modifications occur. |
+- **`express`** — Fast Node.js web framework for REST API endpoints
+- **`mongoose`** — MongoDB object modeling (ODM) & schema validation
+- **`jsonwebtoken` & `bcryptjs`** — JWT authentication & password encryption
+- **`cors` & `dotenv`** — Cross-Origin sharing & environment variable management
+- **`uuid` & `nodemon`** — Unique ID generation & dev auto-restart server
 
 ---
 
