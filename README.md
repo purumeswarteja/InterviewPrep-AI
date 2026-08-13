@@ -160,33 +160,31 @@ The platform provides realistic interview experiences with AI-generated question
 
 # 📦 Required Packages
 
-### 🎨 Frontend Dependencies (`frontend/`)
+### 🎨 Frontend Packages (`frontend/package.json`)
 
-```bash
-npm install react react-dom react-router-dom lucide-react framer-motion recharts react-hot-toast pdfjs-dist
-```
-
-- **`react` / `react-dom`** — Core UI component framework & DOM rendering engine
-- **`react-router-dom`** — Single-page routing & seamless client navigation
-- **`lucide-react`** — Lightweight vector icons for modern UI elements
-- **`framer-motion`** — Smooth animations, transitions, and interactive micro-UI
-- **`recharts`** — Interactive charting library for analytics visualization
-- **`react-hot-toast`** — Clean toast notification alerts for user feedback
-- **`pdfjs-dist`** — Client-side resume PDF parsing & text extraction
+- **`react`** — UI component framework
+- **`react-dom`** — DOM rendering engine for React
+- **`react-router-dom`** — Client-side navigation & routing
+- **`lucide-react`** — Vector icon set for UI design
+- **`framer-motion`** — Page transitions & UI animations
+- **`recharts`** — Interactive analytics & charts
+- **`react-hot-toast`** — Toast notifications
+- **`pdfjs-dist`** — Client-side resume PDF text parser
+- **`vite`** — Development server & build tool
+- **`tailwindcss`** — Utility-first CSS styling framework
 
 ---
 
-### ⚙️ Backend Dependencies (`backend/`)
+### ⚙️ Backend Packages (`backend/package.json`)
 
-```bash
-npm install express mongoose dotenv bcryptjs jsonwebtoken cors uuid
-```
-
-- **`express`** — Fast Node.js web framework for REST API endpoints
-- **`mongoose`** — MongoDB object modeling (ODM) & schema validation
-- **`jsonwebtoken` & `bcryptjs`** — JWT authentication & password encryption
-- **`cors` & `dotenv`** — Cross-Origin sharing & environment variable management
-- **`uuid` & `nodemon`** — Unique ID generation & dev auto-restart server
+- **`express`** — Node.js REST API web server framework
+- **`mongoose`** — MongoDB object data modeling & schema validation
+- **`bcryptjs`** — Password hashing algorithm for security
+- **`jsonwebtoken`** — JWT session token authentication
+- **`cors`** — Cross-Origin Resource Sharing middleware
+- **`dotenv`** — Environment variable manager (`.env`)
+- **`uuid`** — Unique identifier (UUID) generator
+- **`nodemon`** — Automatic server restarter during development
 
 ---
 
