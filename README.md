@@ -158,33 +158,116 @@ The platform provides realistic interview experiences with AI-generated question
 
 ---
 
-# 📦 Required Packages
+# 📦 Required Packages & Installation Commands
 
 ### 🎨 Frontend Packages (`frontend/package.json`)
 
-- **`react`** — UI component framework
-- **`react-dom`** — DOM rendering engine for React
-- **`react-router-dom`** — Client-side navigation & routing
-- **`lucide-react`** — Vector icon set for UI design
-- **`framer-motion`** — Page transitions & UI animations
-- **`recharts`** — Interactive analytics & charts
-- **`react-hot-toast`** — Toast notifications
-- **`pdfjs-dist`** — Client-side resume PDF text parser
-- **`vite`** — Development server & build tool
-- **`tailwindcss`** — Utility-first CSS styling framework
+To install all frontend packages at once:
+```bash
+cd frontend
+npm install react react-dom react-router-dom lucide-react framer-motion recharts react-hot-toast pdfjs-dist
+npm install -D vite @vitejs/plugin-react tailwindcss postcss autoprefixer
+```
+
+#### Individual Package Installation Commands:
+
+1. **`react` & `react-dom`** — Core UI component framework & DOM rendering engine
+   ```bash
+   npm install react react-dom
+   ```
+
+2. **`react-router-dom`** — Client-side navigation & routing
+   ```bash
+   npm install react-router-dom
+   ```
+
+3. **`lucide-react`** — Vector icon set for UI design
+   ```bash
+   npm install lucide-react
+   ```
+
+4. **`framer-motion`** — Page transitions & UI animations
+   ```bash
+   npm install framer-motion
+   ```
+
+5. **`recharts`** — Interactive analytics & charts
+   ```bash
+   npm install recharts
+   ```
+
+6. **`react-hot-toast`** — Toast notifications
+   ```bash
+   npm install react-hot-toast
+   ```
+
+7. **`pdfjs-dist`** — Client-side resume PDF text parser
+   ```bash
+   npm install pdfjs-dist
+   ```
+
+8. **`vite`** — Development server & build tool
+   ```bash
+   npm install -D vite @vitejs/plugin-react
+   ```
+
+9. **`tailwindcss`** — Utility-first CSS styling framework
+   ```bash
+   npm install -D tailwindcss postcss autoprefixer
+   ```
 
 ---
 
 ### ⚙️ Backend Packages (`backend/package.json`)
 
-- **`express`** — Node.js REST API web server framework
-- **`mongoose`** — MongoDB object data modeling & schema validation
-- **`bcryptjs`** — Password hashing algorithm for security
-- **`jsonwebtoken`** — JWT session token authentication
-- **`cors`** — Cross-Origin Resource Sharing middleware
-- **`dotenv`** — Environment variable manager (`.env`)
-- **`uuid`** — Unique identifier (UUID) generator
-- **`nodemon`** — Automatic server restarter during development
+To install all backend packages at once:
+```bash
+cd backend
+npm install express mongoose dotenv bcryptjs jsonwebtoken cors uuid
+npm install -D nodemon
+```
+
+#### Individual Package Installation Commands:
+
+1. **`express`** — Node.js REST API web server framework
+   ```bash
+   npm install express
+   ```
+
+2. **`mongoose`** — MongoDB object data modeling & schema validation
+   ```bash
+   npm install mongoose
+   ```
+
+3. **`bcryptjs`** — Password hashing algorithm for security
+   ```bash
+   npm install bcryptjs
+   ```
+
+4. **`jsonwebtoken`** — JWT session token authentication
+   ```bash
+   npm install jsonwebtoken
+   ```
+
+5. **`cors`** — Cross-Origin Resource Sharing middleware
+   ```bash
+   npm install cors
+   ```
+
+6. **`dotenv`** — Environment variable manager (`.env`)
+   ```bash
+   npm install dotenv
+   ```
+
+7. **`uuid`** — Unique identifier (UUID) generator
+   ```bash
+   npm install uuid
+   ```
+
+8. **`nodemon`** — Automatic server restarter during development
+   ```bash
+   npm install -D nodemon
+   ```
 
 ---
 
