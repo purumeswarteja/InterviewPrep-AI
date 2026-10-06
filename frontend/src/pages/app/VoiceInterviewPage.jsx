@@ -130,7 +130,7 @@ export default function VoiceInterviewPage() {
     };
   }, [stop]);
 
-  const submitAnswer = () => {
+  const submitAnswer = async () => {
     const textToSubmit = activeAnswerText.trim();
     if (!textToSubmit) {
       toast.error("Please record your voice or type an answer before continuing.");
@@ -140,7 +140,34 @@ export default function VoiceInterviewPage() {
     stopSpeaking();
     setIsSpeakingQuestion(false);
 
-    const { score, feedback } = generateVoiceFeedback(textToSubmit);
+    setSaving(true);
+    let evalResult = null;
+    try {
+      const res = await api.evaluateInterviewWithAI({
+        question: voiceQuestions[currentIdx],
+        answer: textToSubmit,
+        topic: "Voice Behavioral & Communication Practice",
+        difficulty: "medium",
+        category: "Voice & Communication"
+      });
+      if (res && res.evaluation) {
+        evalResult = res.evaluation;
+      }
+    } catch (err) {
+      console.error("AI Voice evaluation error:", err);
+    }
+    setSaving(false);
+
+    let score, feedback;
+    if (evalResult) {
+      score = evalResult.score;
+      feedback = evalResult.feedback_notes || evalResult.verdict;
+    } else {
+      const fallback = generateVoiceFeedback(textToSubmit);
+      score = fallback.score;
+      feedback = fallback.feedback;
+    }
+
     const qa = {
       id: `q-${currentIdx}`,
       question: voiceQuestions[currentIdx],
@@ -160,6 +187,7 @@ export default function VoiceInterviewPage() {
       finishInterview(newAnswers);
     }
   };
+
 
   const finishInterview = useCallback(async (allAnswers) => {
     setSaving(true);

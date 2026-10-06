@@ -163,43 +163,75 @@ export default function ResumeAnalyzerPage() {
     }
 
     setAnalyzing(true);
-    await new Promise((r) => setTimeout(r, 1200));
 
-    const analysis = analyzeResume(text);
+    try {
+      const aiResponse = await api.analyzeResumeWithAI({
+        resume_text: text,
+        file_name: fileName || 'uploaded-resume'
+      });
 
-    const payload = {
-      user_id: user?.id,
-      file_name: fileName || 'uploaded-resume',
-      resume_text: text.slice(0, 5000),
-      ats_score: analysis.atsScore,
-      grammar_score: analysis.grammarScore,
-      keyword_score: analysis.keywordScore,
-      overall_score: analysis.overall,
-      keywords_found: analysis.found,
-      keywords_missing: analysis.missing,
-      suggestions: analysis.suggestions,
-      strengths: analysis.strengths,
-      weaknesses: analysis.weaknesses,
-    };
+      let analysis;
+      if (aiResponse && aiResponse.analysis) {
+        analysis = aiResponse.analysis;
+      } else {
+        // Fallback to local heuristic if offline
+        analysis = analyzeResume(text);
+      }
 
-    const localResult = { ...payload, id: 'local', user_id: user?.id || '', created_at: new Date().toISOString() };
+      const payload = {
+        user_id: user?.id,
+        file_name: fileName || 'uploaded-resume',
+        resume_text: text.slice(0, 5000),
+        ats_score: analysis.ats_score || analysis.atsScore,
+        grammar_score: analysis.grammar_score || analysis.grammarScore,
+        keyword_score: analysis.keyword_score || analysis.keywordScore,
+        overall_score: analysis.overall_score || analysis.overall,
+        detected_domain: analysis.detected_domain || 'General Tech',
+        keywords_found: analysis.keywords_found || analysis.found,
+        keywords_missing: analysis.keywords_missing || analysis.missing,
+        suggestions: analysis.suggestions || [],
+        strengths: analysis.strengths || [],
+        weaknesses: analysis.weaknesses || [],
+      };
 
-    if (user) {
-      const data = await api.createResumeAnalysis(payload);
-      if (data.error) {
-        toast.error('Failed to save analysis: ' + data.error);
-        setResult(localResult);
-      } else if (data.analysis) {
-        setResult(data.analysis);
+      const localResult = { ...payload, id: 'local', user_id: user?.id || '', created_at: new Date().toISOString() };
+
+      if (user) {
+        const data = await api.createResumeAnalysis(payload);
+        if (data.analysis) {
+          setResult({ ...data.analysis, detected_domain: payload.detected_domain });
+        } else {
+          setResult(localResult);
+        }
       } else {
         setResult(localResult);
       }
-    } else {
+      toast.success(`Analysis complete! Identified domain: ${payload.detected_domain}`);
+    } catch (err) {
+      console.error('Resume AI Error:', err);
+      const fallback = analyzeResume(text);
+      const localResult = {
+        user_id: user?.id || '',
+        file_name: fileName || 'uploaded-resume',
+        ats_score: fallback.atsScore,
+        grammar_score: fallback.grammarScore,
+        keyword_score: fallback.keywordScore,
+        overall_score: fallback.overall,
+        keywords_found: fallback.found,
+        keywords_missing: fallback.missing,
+        suggestions: fallback.suggestions,
+        strengths: fallback.strengths,
+        weaknesses: fallback.weaknesses,
+        id: 'local',
+        created_at: new Date().toISOString()
+      };
       setResult(localResult);
+      toast.success('Resume analysis complete!');
+    } finally {
+      setAnalyzing(false);
     }
-    setAnalyzing(false);
-    toast.success('Resume analysis complete!');
   }, [text, fileName, user]);
+
 
   const clearFile = () => {
     setFileName('');
@@ -323,8 +355,15 @@ export default function ResumeAnalyzerPage() {
             
             {/* Overall Score Box */}
             <Card className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col items-center text-center">
+              {result.detected_domain && (
+                <div className="mb-3 px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full border border-emerald-200 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>AI Detected Domain: {result.detected_domain}</span>
+                </div>
+              )}
               <ScoreRing score={result.overall_score || 0} size={130} />
               <p className="mt-3 text-sm font-semibold text-gray-700">Overall ATS Match Score</p>
+
 
               <div className="grid grid-cols-3 gap-6 w-full max-w-lg mt-6 pt-4 border-t border-gray-100">
                 {[

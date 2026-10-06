@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { GoogleGenAI } from '@google/genai';
 
 import User from './models/User.js';
 import Profile from './models/Profile.js';
@@ -15,6 +16,8 @@ const app = express();
 const port = process.env.PORT || 4000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/interviewprep';
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 app.use(cors());
 app.use(express.json());
@@ -218,6 +221,144 @@ app.post('/api/resume-analyses', authMiddleware, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ─── AI Integration Routes (Google Gemini) ───────────────────────────────────
+
+function cleanJsonResponse(text) {
+  try {
+    let clean = text.trim();
+    if (clean.startsWith('```')) {
+      clean = clean.replace(/^```(json)?\n?/, '').replace(/\n?```$/, '');
+    }
+    return JSON.parse(clean);
+  } catch (err) {
+    console.error('JSON parse error from AI response:', err.message, text);
+    return null;
+  }
+}
+
+async function callGeminiApi(prompt) {
+  const model = 'gemini-flash-latest';
+  let lastError;
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: prompt,
+      });
+      if (response && response.text) {
+        return response.text;
+      }
+    } catch (err) {
+      console.warn(`Gemini AI attempt ${attempt} failed (${err.message}). Retrying...`);
+      lastError = err;
+      if (attempt < 3) {
+        await new Promise((r) => setTimeout(r, 1200 * attempt));
+      }
+    }
+  }
+  throw lastError || new Error('Gemini AI call failed after retries');
+}
+
+
+
+// 1. Dynamic AI Resume Analyzer
+app.post('/api/ai/analyze-resume', async (req, res) => {
+  try {
+    const { resume_text, file_name } = req.body;
+    if (!resume_text || resume_text.trim().length < 30) {
+      return res.status(400).json({ error: 'Resume text is too short or missing.' });
+    }
+
+    const prompt = `You are an expert ATS (Applicant Tracking System) & Senior Hiring Manager. 
+Analyze the following resume text carefully:
+
+--- RESUME START ---
+${resume_text.slice(0, 6000)}
+--- RESUME END ---
+
+Instructions:
+1. Detect the candidate's primary domain/field (e.g., "Machine Learning", "Full Stack Development", "Data Science", "DevOps & Cloud", "Mobile Development", "Cybersecurity", "UI/UX", etc.).
+2. Evaluate ATS compatibility, keyword relevance for their SPECIFIC domain, grammar/formatting, and overall strength.
+3. Identify keywords that ARE PRESENT in the resume relevant to their domain.
+4. Identify high-value RECOMMENDED MISSING KEYWORDS specifically relevant to their target domain (e.g. if Machine Learning, suggest PyTorch, MLOps, Model Deployment, etc. Do NOT suggest irrelevant web dev skills like React/Redis unless it's fullstack).
+5. Provide actionable suggestions, strengths, and weaknesses.
+
+Respond ONLY with a valid JSON object in this exact format (no extra text):
+{
+  "detected_domain": "string",
+  "ats_score": number (0-100),
+  "grammar_score": number (0-100),
+  "keyword_score": number (0-100),
+  "overall_score": number (0-100),
+  "keywords_found": ["array of detected domain skills"],
+  "keywords_missing": ["array of recommended missing domain skills"],
+  "strengths": ["array of key strengths"],
+  "weaknesses": ["array of areas to improve"],
+  "suggestions": ["array of actionable recommendations"]
+}`;
+
+    const rawText = await callGeminiApi(prompt);
+    const parsed = cleanJsonResponse(rawText);
+    if (!parsed) {
+      return res.status(500).json({ error: 'Failed to parse AI resume analysis output.' });
+    }
+
+    res.json({ analysis: parsed });
+  } catch (err) {
+    console.error('AI Resume Analysis Error:', err.message);
+    res.status(500).json({ error: 'AI Resume Analysis failed: ' + err.message });
+  }
+});
+
+
+// 2. Dynamic AI Interview Evaluator
+app.post('/api/ai/evaluate-interview', async (req, res) => {
+  try {
+    const { question, answer, topic, difficulty, category } = req.body;
+    if (!question || !answer) {
+      return res.status(400).json({ error: 'Question and answer are required.' });
+    }
+
+    const prompt = `You are a Senior Technical Interviewer and Domain Expert in "${topic || 'Software Engineering'}".
+
+Evaluate the following candidate interview response:
+- Category/Domain: ${category || topic || 'Technical'}
+- Difficulty Level: ${difficulty || 'medium'}
+- Interview Question: "${question}"
+- Candidate's Answer: "${answer}"
+
+CRITICAL INSTRUCTIONS:
+- Evaluate based on SEMANTIC CORRECTNESS, LOGIC, and TECHNICAL COMPLETENESS.
+- DO NOT penalize the candidate simply because they didn't use exact hardcoded buzzwords if their logic and explanation are accurate.
+- If the candidate's answer is correct, grant a high score (80-100%) and praise their conceptual understanding.
+- If incomplete or incorrect, explain constructively what was missing.
+
+Respond ONLY with a valid JSON object in this exact format (no extra markdown outside JSON):
+{
+  "score": number (0-100),
+  "is_correct": boolean,
+  "verdict": "string (e.g., 'Excellent', 'Good', 'Needs Improvement')",
+  "strengths": ["array of what candidate explained well"],
+  "missing_concepts": ["array of missing technical points or edge cases"],
+  "improved_sample_answer": "string (ideal concise sample answer for this question)",
+  "feedback_notes": "string (overall summary feedback for the candidate)"
+}`;
+
+    const rawText = await callGeminiApi(prompt);
+    const parsed = cleanJsonResponse(rawText);
+    if (!parsed) {
+      return res.status(500).json({ error: 'Failed to parse AI evaluation output.' });
+    }
+
+    res.json({ evaluation: parsed });
+  } catch (err) {
+    console.error('AI Interview Evaluation Error:', err.message);
+    res.status(500).json({ error: 'AI evaluation failed: ' + err.message });
+  }
+});
+
 
 // ─── Analytics Route ──────────────────────────────────────────────────────────
 

@@ -150,26 +150,54 @@ export default function MockInterviewPage() {
     toast.success(`Interview started with ${final.length} questions! Good luck.`);
   };
 
-  const submitAnswer = () => {
+  const submitAnswer = async () => {
     if (!currentAnswer.trim()) {
       toast.error('Please write an answer before continuing.');
       return;
     }
     const currentQ = questions[currentIdx];
-    const { score, feedback, matchedKeywords } = generateFeedback(
-      currentAnswer,
-      currentQ.a,
-      currentQ.keywords
-    );
+
+    setSaving(true);
+    let evalResult = null;
+    try {
+      const res = await api.evaluateInterviewWithAI({
+        question: currentQ.q,
+        answer: currentAnswer,
+        topic,
+        difficulty,
+        category: topic
+      });
+      if (res && res.evaluation) {
+        evalResult = res.evaluation;
+      }
+    } catch (err) {
+      console.error('AI Evaluation error:', err);
+    }
+    setSaving(false);
+
+    let finalScore, finalFeedback, modelAnswer;
+    if (evalResult) {
+      finalScore = evalResult.score;
+      finalFeedback = evalResult.feedback_notes || evalResult.verdict;
+      modelAnswer = evalResult.improved_sample_answer || currentQ.a;
+    } else {
+      const fallback = generateFeedback(currentAnswer, currentQ.a, currentQ.keywords);
+      finalScore = fallback.score;
+      finalFeedback = fallback.feedback;
+      modelAnswer = currentQ.a;
+    }
+
     const qa = {
       id: `q-${currentIdx}`,
       question: currentQ.q,
       answer: currentAnswer,
-      feedback,
-      score,
-      model_answer: currentQ.a,
-      tags: matchedKeywords
+      feedback: finalFeedback,
+      score: finalScore,
+      model_answer: modelAnswer,
+      strengths: evalResult?.strengths || [],
+      missing_concepts: evalResult?.missing_concepts || []
     };
+
     const newAnswers = [...answers, qa];
     setAnswers(newAnswers);
     setCurrentAnswer('');
@@ -179,6 +207,7 @@ export default function MockInterviewPage() {
       finishInterview(newAnswers);
     }
   };
+
 
   const finishInterview = useCallback(async (allAnswers) => {
     setSaving(true);

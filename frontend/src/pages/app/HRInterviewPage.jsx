@@ -213,7 +213,7 @@ export default function HRInterviewPage() {
     toast.success("HR interview started! Speak your answer or edit in the box.");
   };
 
-  const submitAnswer = () => {
+  const submitAnswer = async () => {
     const textToSubmit = activeAnswerText.trim();
     if (!textToSubmit) {
       toast.error("Please record your voice or type your response.");
@@ -221,14 +221,44 @@ export default function HRInterviewPage() {
     }
     stop();
     const currentQ = questions[currentIdx];
-    const { score, feedback } = generateHRFeedback(textToSubmit, currentQ.a, currentQ.keywords);
+
+    setSaving(true);
+    let evalResult = null;
+    try {
+      const res = await api.evaluateInterviewWithAI({
+        question: currentQ.q,
+        answer: textToSubmit,
+        topic: "HR & Behavioral Interview",
+        difficulty: "medium",
+        category: "HR / STAR Framework"
+      });
+      if (res && res.evaluation) {
+        evalResult = res.evaluation;
+      }
+    } catch (err) {
+      console.error("AI HR evaluation error:", err);
+    }
+    setSaving(false);
+
+    let score, feedback, modelAnswer;
+    if (evalResult) {
+      score = evalResult.score;
+      feedback = evalResult.feedback_notes || evalResult.verdict;
+      modelAnswer = evalResult.improved_sample_answer || currentQ.a;
+    } else {
+      const fallback = generateHRFeedback(textToSubmit, currentQ.a, currentQ.keywords);
+      score = fallback.score;
+      feedback = fallback.feedback;
+      modelAnswer = currentQ.a;
+    }
+
     const qa = {
       id: `q-${currentIdx}`,
       question: currentQ.q,
       answer: textToSubmit,
       feedback,
       score,
-      model_answer: currentQ.a
+      model_answer: modelAnswer
     };
     const newAnswers = [...answers, qa];
     setAnswers(newAnswers);
@@ -242,6 +272,7 @@ export default function HRInterviewPage() {
       finishInterview(newAnswers);
     }
   };
+
 
   const finishInterview = useCallback(async (allAnswers) => {
     setSaving(true);

@@ -124,6 +124,20 @@ const logout = () => {
   sessionStorage.removeItem('current_user_pw');
 };
 
+const analyzeResumeWithAI = async (payload) => {
+  return request("/api/ai/analyze-resume", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+};
+
+const evaluateInterviewWithAI = async (payload) => {
+  return request("/api/ai/evaluate-interview", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+};
+
 export const api = {
   signup,
   login,
@@ -133,6 +147,8 @@ export const api = {
   createSession,
   deleteSession,
   createResumeAnalysis,
+  analyzeResumeWithAI,
+  evaluateInterviewWithAI,
   getAnalytics,
   passwordReset,
   deleteAccount,
@@ -140,3 +156,4 @@ export const api = {
   getToken,
   setToken
 };
+

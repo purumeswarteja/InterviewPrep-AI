@@ -70,13 +70,14 @@ export function useSpeechRecognition() {
       recorder.start(250);
       setState("recording_fallback");
       setUseFallbackMode(true);
-      setError("Cloud speech recognition unreachable. Using direct microphone audio recording fallback. You can speak and edit your response below.");
+      setError("Voice-to-text is only supported in Google Chrome. Your microphone is recording — please type your answer in the box below.");
     } catch (err) {
       console.error("MediaRecorder fallback error:", err);
       setError("Microphone access denied or unavailable. Please check your browser mic permissions.");
       setState("error");
     }
   }, []);
+
 
   // Start Speech Recognition (attempts Web Speech API first, falls back to MediaRecorder on network error)
   const start = useCallback(() => {
