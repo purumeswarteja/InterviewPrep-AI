@@ -23,7 +23,6 @@ const navItems = [
   { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/app/mock-interview", label: "AI Mock Interview", icon: Brain },
   { to: "/app/hr-interview", label: "HR Interview", icon: Mic },
-  { to: "/app/voice-interview", label: "Voice Interview", icon: Mic },
   { to: "/app/resume-analyzer", label: "Resume Analyzer", icon: FileText },
   { to: "/app/history", label: "History", icon: History },
   { to: "/app/analytics", label: "Analytics", icon: BarChart3 },

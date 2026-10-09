@@ -359,6 +359,145 @@ Respond ONLY with a valid JSON object in this exact format (no extra markdown ou
   }
 });
 
+// 3. Dynamic AI HR Question & Adaptive Follow-Up Generator
+app.post('/api/ai/generate-hr-question', async (req, res) => {
+  try {
+    const {
+      role,
+      topicId = 'introduction',
+      topicName = 'Introduction',
+      totalQuestions = 5,
+      currentQuestion = 1,
+      previousQuestions = [],
+      previousAnswers = []
+    } = req.body;
+
+    const prevQAFormatted = (previousQuestions || []).map((q, idx) => {
+      const a = (previousAnswers && previousAnswers[idx]) ? previousAnswers[idx] : '(Skipped / No response)';
+      return `Question ${idx + 1}: ${q}\nAnswer ${idx + 1}: ${a}`;
+    }).join('\n\n');
+
+    const prompt = `You are a Senior HR Director and Behavioral Interviewer.
+Target Role Context: ${role || 'General Position'}
+HR Topic Block: ${topicName} (ID: ${topicId})
+Total Questions Requested: ${totalQuestions}
+Current Question Number: ${currentQuestion}
+
+Previous Questions and Answers in this Interview:
+${prevQAFormatted || 'None (This is the first question of the HR round)'}
+
+CRITICAL RULES FOR ADAPTIVE HR INTERVIEWING:
+1. Focus on the selected HR Topic Block: ${topicName}.
+2. ADAPTIVE FOLLOW-UP RULE: Analyze the candidate's LAST answer (if present).
+   - If the candidate mentioned a specific conflict, project detail, mistake, decision, or event that warrants deeper exploration, ask a natural, conversational FOLLOW-UP question about that specific lead.
+   - Example: If candidate said "I had a conflict with a teammate regarding architecture", ask: "How did you handle that conflict with your teammate, and what was the ultimate outcome?"
+3. STRICT NO REPEATED QUESTIONS OR CONCEPTS RULE:
+   - Carefully examine the Previous Questions listed above.
+   - NEVER re-ask a question, concept, or topic that was already asked in Previous Questions!
+   - If the previous question was an adaptive follow-up (e.g. asking how candidate overcame a weakness or conflict), DO NOT return to the initial question about strengths/weaknesses or conflicts. Immediately move forward to a NEW, UNASKED question or competency!
+4. Assess soft skills, communication clarity, situational judgment, STAR method structure, and culture fit.
+5. Keep questions professional, engaging, and direct.
+
+Respond ONLY with a valid JSON object in this exact format (no markdown formatting outside JSON):
+{
+  "question": "string (the HR question or adaptive follow-up question)",
+  "is_followup": boolean (true if this question is a direct follow-up to the candidate's last answer, false otherwise),
+  "focus_topic": "string (the topic block or competency evaluated)",
+  "evaluation_of_previous": {
+    "score": number (0-100 score for previous answer, or null if first question),
+    "verdict": "string (e.g., 'Articulate STAR Response', 'Good Points', 'Needs Detail', 'Skipped')",
+    "feedback": "string (constructive evaluation notes on candidate's previous response, or empty string if first question)"
+  }
+}`;
+
+    let rawText;
+    let parsed;
+    try {
+      rawText = await callGeminiApi(prompt);
+      parsed = cleanJsonResponse(rawText);
+    } catch (apiErr) {
+      console.warn('Gemini API call failed for HR question, using topic fallback:', apiErr.message);
+    }
+
+    if (!parsed || !parsed.question) {
+      // Topic Block Fallback Generator with No-Repeat Filter
+      const fallbackQuestionsMap = {
+        'introduction': [
+          `Tell me about yourself, your background, and what key experiences led you to pursue a role as a ${role || 'candidate'}.`,
+          `Walk me through your resume and highlight the achievements you are most proud of.`,
+          `What aspect of your professional background makes you well-suited for this position?`
+        ],
+        'education-projects': [
+          `Why did you choose your field of study/major, and how has it shaped your technical career?`,
+          `Tell me about your primary project. What was your specific contribution and what challenges did you overcome?`,
+          `If you had to rebuild your major project today, what design or technical choices would you change?`
+        ],
+        'strengths-weaknesses': [
+          `What are your top 2-3 greatest professional strengths? Give a concrete example of how you applied one recently.`,
+          `What is an area or weakness you are actively working to improve, and what concrete steps are you taking?`,
+          `How do you handle situations where a task requires skills outside your current expertise?`
+        ],
+        'behavioral': [
+          `Tell me about a time you faced a high-pressure situation or tight deadline. How did you handle it?`,
+          `Describe a situation where you had a conflict with a teammate or stakeholder. How did you resolve it?`,
+          `Tell me about a time you experienced a failure or mistake. How did you handle it and what did you learn?`
+        ],
+        'career-company': [
+          `Why do you want to join our company, and what unique value would you bring to our team?`,
+          `Why should we hire you over other qualified candidates for this position?`,
+          `Where do you see yourself professionally in 3 to 5 years?`
+        ],
+        'situational': [
+          `What would you do if a teammate was not contributing their fair share to a project with an urgent deadline?`,
+          `How would you handle a situation where you strongly disagreed with your manager's decision?`,
+          `How do you prioritize your work when managing multiple competing high-priority deadlines?`
+        ],
+        'closing': [
+          `Do you have any questions for us regarding the team, role expectations, or company culture?`,
+          `Is there anything else about your background or qualifications that we haven't covered today?`
+        ]
+      };
+
+      const topicPool = fallbackQuestionsMap[topicId] || fallbackQuestionsMap['introduction'];
+      const prevTexts = (previousQuestions || []).map(q => q.toLowerCase());
+      const unusedPool = topicPool.filter(q => !prevTexts.some(pq => pq.includes(q.slice(0, 20).toLowerCase())));
+
+      const fallbackQ = unusedPool.length > 0
+        ? unusedPool[0]
+        : topicPool[(currentQuestion - 1) % topicPool.length];
+
+      const lastAns = previousAnswers && previousAnswers.length > 0 ? previousAnswers[previousAnswers.length - 1] : '';
+      const isLastSkipped = !lastAns || lastAns.includes('(Skipped') || lastAns.trim() === '';
+
+      parsed = {
+        question: fallbackQ,
+        is_followup: false,
+        focus_topic: topicName,
+        evaluation_of_previous: currentQuestion > 1 ? {
+          score: isLastSkipped ? 0 : 75,
+          verdict: isLastSkipped ? 'Skipped' : 'Good Communication',
+          feedback: isLastSkipped ? 'Question was skipped with no candidate response.' : 'Response delivered with reasonable clarity.'
+        } : null
+      };
+    }
+
+    res.json({ result: parsed });
+  } catch (err) {
+    console.error('AI HR Question Error:', err.message);
+    const fallbackQ = `Tell me about yourself, your background, and why you are interested in this position as a ${req.body.role || 'candidate'}.`;
+    res.json({
+      result: {
+        question: fallbackQ,
+        is_followup: false,
+        focus_topic: req.body.topicName || 'Introduction',
+        evaluation_of_previous: null
+      }
+    });
+  }
+});
+
+
+
 
 // ─── Analytics Route ──────────────────────────────────────────────────────────
 

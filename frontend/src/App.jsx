@@ -12,7 +12,6 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import DashboardPage from './pages/app/DashboardPage';
 import MockinterviewPage from './pages/app/MockinterviewPage';
 import HRInterviewPage from './pages/app/HRInterviewPage';
-import VoiceInterviewPage from './pages/app/VoiceInterviewPage';
 import ResumeAnalyzerPage from './pages/app/ResumeAnalyzerPage';
 import HistoryPage from './pages/app/HistoryPage';
 import AnalyticsPage from './pages/app/AnalyticsPage';
@@ -55,7 +54,7 @@ function AppRoutes() {
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="mock-interview" element={<MockinterviewPage />} />
         <Route path="hr-interview" element={<HRInterviewPage />} />
-        <Route path="voice-interview" element={<VoiceInterviewPage />} />
+        <Route path="hr" element={<HRInterviewPage />} />
         <Route path="resume-analyzer" element={<ResumeAnalyzerPage />} />
         <Route path="history" element={<HistoryPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />

@@ -138,6 +138,20 @@ const evaluateInterviewWithAI = async (payload) => {
   });
 };
 
+const generateNextQuestion = async (payload) => {
+  return request("/api/ai/generate-next-question", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+};
+
+const generateHRQuestion = async (payload) => {
+  return request("/api/ai/generate-hr-question", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+};
+
 export const api = {
   signup,
   login,
@@ -149,6 +163,8 @@ export const api = {
   createResumeAnalysis,
   analyzeResumeWithAI,
   evaluateInterviewWithAI,
+  generateNextQuestion,
+  generateHRQuestion,
   getAnalytics,
   passwordReset,
   deleteAccount,

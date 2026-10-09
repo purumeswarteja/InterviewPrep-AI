@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Brain, Mic, FileText, TrendingUp, Flame, Target, Award,
-  ArrowRight, Clock, Play, Zap, ChevronRight, Star
+  ArrowRight, Clock, Play, Zap, ChevronRight, Star, X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/api';
@@ -26,14 +26,6 @@ const quickActions = [
     desc: 'Behavioral & culture fit prep',
     gradient: 'linear-gradient(135deg, #06a5f1, #0084d1)',
     shadow: 'rgba(6,165,241,0.35)',
-  },
-  {
-    to: '/app/voice-interview',
-    icon: Mic,
-    label: 'Voice Interview',
-    desc: 'Speak your answers aloud',
-    gradient: 'linear-gradient(135deg, #ff7d11, #f06307)',
-    shadow: 'rgba(255,125,17,0.35)',
   },
   {
     to: '/app/resume-analyzer',
@@ -69,6 +61,7 @@ export default function DashboardPage() {
   const [sessions, setSessions] = useState([]);
   const [todayQuestion, setTodayQuestion] = useState(dailyChallengeQuestions[0]);
   const [loading, setLoading] = useState(true);
+  const [selectedSession, setSelectedSession] = useState(null);
 
   useEffect(() => {
     const dayIdx = new Date().getDate() % dailyChallengeQuestions.length;
@@ -274,13 +267,16 @@ export default function DashboardPage() {
                   const tc = typeColors[s.type] || { bg: '#f6f7f9', icon: '#5d6880' };
                   return (
                     <div key={s.id}
-                      className="flex items-center gap-4 p-3.5 rounded-xl border border-transparent hover:border-gray-200 hover:bg-gray-50 transition-all cursor-default">
+                      onClick={() => setSelectedSession(s)}
+                      className="flex items-center gap-4 p-3.5 rounded-xl border border-transparent hover:border-gray-200 hover:bg-gray-50 transition-all cursor-pointer group">
                       <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
                         style={{ background: tc.bg }}>
                         <Brain className="w-5 h-5" style={{ color: tc.icon }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate" style={{ color: '#0c0f1a' }}>{s.topic}</p>
+                        <p className="font-semibold text-sm truncate group-hover:text-emerald-700 transition-colors" style={{ color: '#0c0f1a' }}>
+                          {s.skill || s.topic || 'Practice'}
+                        </p>
                         <div className="flex items-center gap-3 mt-0.5 text-xs" style={{ color: '#5d6880' }}>
                           <span className="capitalize">{s.type} interview</span>
                           <span className="flex items-center gap-1">
@@ -288,6 +284,7 @@ export default function DashboardPage() {
                             {timeAgo(s.created_at)}
                           </span>
                           {s.duration_seconds && <span>{formatDuration(s.duration_seconds)}</span>}
+                          {s.role && <span className="truncate max-w-[120px]">({s.role})</span>}
                         </div>
                       </div>
                       {s.score !== null && (
@@ -384,6 +381,94 @@ export default function DashboardPage() {
 
         </div>
       </div>
+
+      {/* Selected Session Modal */}
+      {selectedSession && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-fade-in"
+          onClick={() => setSelectedSession(null)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-3xl w-full max-h-[85vh] overflow-y-auto scrollbar-thin shadow-2xl border border-gray-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white border-b border-gray-100 p-5 flex items-center justify-between z-10">
+              <div>
+                <h2 className="font-display font-bold text-xl text-gray-900">
+                  {selectedSession.skill || selectedSession.topic || 'Interview Session'}
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Duration: {formatDuration(selectedSession.duration_seconds || 0)} • Difficulty: {selectedSession.difficulty || 'Medium'}
+                  {selectedSession.role && ` • Role: ${selectedSession.role}`}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedSession(null)}
+                className="p-2 rounded-xl hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {selectedSession.score !== null && (
+                <div className="flex flex-col items-center text-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <ScoreRing score={selectedSession.score} size={110} />
+                  <p className="text-xs font-semibold text-gray-600 mt-2">
+                    Overall Interview Score: <strong>{Math.round(selectedSession.score)}%</strong>
+                  </p>
+                </div>
+              )}
+
+              {selectedSession.questions && selectedSession.questions.length > 0 ? (
+                <div className="space-y-4">
+                  <h3 className="font-display font-semibold text-gray-900 text-base">
+                    Interview Questions & Evaluation Breakdown
+                  </h3>
+                  {selectedSession.questions.map((qa, i) => {
+                    const questionText = typeof qa === 'string' ? qa : qa.question || `Question ${i + 1}`;
+                    const answerText = typeof qa === 'object' ? qa.answer : (selectedSession.answers && selectedSession.answers[i]) || '(No response)';
+                    const score = typeof qa === 'object' ? qa.score : null;
+                    const verdict = typeof qa === 'object' ? qa.verdict : null;
+                    const feedback = typeof qa === 'object' ? qa.feedback : null;
+
+                    return (
+                      <div key={i} className="border border-gray-200 rounded-2xl p-4 bg-white shadow-sm space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="text-sm font-bold text-gray-900">
+                            {i + 1}. {questionText}
+                          </p>
+                          {score !== null && score !== undefined && (
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 flex-shrink-0">
+                              {score}% {verdict ? `(${verdict})` : ''}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">
+                            Your Response
+                          </p>
+                          <p className="text-xs text-gray-800 leading-relaxed">{answerText}</p>
+                        </div>
+
+                        {feedback && (
+                          <div className="bg-emerald-50/70 rounded-xl p-3 border border-emerald-100 text-xs text-emerald-950">
+                            <p className="font-bold text-emerald-800 mb-0.5">AI Feedback</p>
+                            <p className="text-gray-800 leading-relaxed">{feedback}</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500 text-center py-4">No detailed question responses recorded.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
