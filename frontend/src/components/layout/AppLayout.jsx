@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, NavLink, useNavigate, Outlet } from "react-router-dom";
 import {
   LayoutDashboard,
+  Calculator,
   Brain,
   Mic,
   FileText,
@@ -21,6 +22,7 @@ import { cn, getInitials } from "../../lib/utils";
 
 const navItems = [
   { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/app/aptitude", label: "Quantitative Aptitude", icon: Calculator },
   { to: "/app/mock-interview", label: "AI Mock Interview", icon: Brain },
   { to: "/app/hr-interview", label: "HR Interview", icon: Mic },
   { to: "/app/resume-analyzer", label: "Resume Analyzer", icon: FileText },

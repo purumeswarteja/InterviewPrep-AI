@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Brain, Mic, FileText, TrendingUp, Flame, Target, Award,
+  Calculator, Brain, Mic, FileText, TrendingUp, Flame, Target, Award,
   ArrowRight, Clock, Play, Zap, ChevronRight, Star, X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -11,6 +11,14 @@ import { timeAgo, formatDuration } from '../../lib/utils';
 import { dailyChallengeQuestions } from '../../data/questions';
 
 const quickActions = [
+  {
+    to: '/app/aptitude',
+    icon: Calculator,
+    label: 'Quantitative Aptitude',
+    desc: 'Math, ratios, speeds & logic',
+    gradient: 'linear-gradient(135deg, #059669, #047857)',
+    shadow: 'rgba(5,150,105,0.35)',
+  },
   {
     to: '/app/mock-interview',
     icon: Brain,

@@ -152,6 +152,13 @@ const generateHRQuestion = async (payload) => {
   });
 };
 
+const generateAptitudeQuestions = async (payload) => {
+  return request("/api/ai/generate-aptitude-questions", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+};
+
 export const api = {
   signup,
   login,
@@ -165,6 +172,7 @@ export const api = {
   evaluateInterviewWithAI,
   generateNextQuestion,
   generateHRQuestion,
+  generateAptitudeQuestions,
   getAnalytics,
   passwordReset,
   deleteAccount,
