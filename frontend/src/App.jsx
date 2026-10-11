@@ -11,6 +11,7 @@ import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import DashboardPage from './pages/app/DashboardPage';
 import AptitudePage from './pages/app/AptitudePage';
+import ReasoningPage from './pages/app/ReasoningPage';
 import MockinterviewPage from './pages/app/MockinterviewPage';
 import HRInterviewPage from './pages/app/HRInterviewPage';
 import ResumeAnalyzerPage from './pages/app/ResumeAnalyzerPage';
@@ -54,6 +55,7 @@ function AppRoutes() {
         <Route index element={<Navigate to="/app/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="aptitude" element={<AptitudePage />} />
+        <Route path="reasoning" element={<ReasoningPage />} />
         <Route path="mock-interview" element={<MockinterviewPage />} />
         <Route path="hr-interview" element={<HRInterviewPage />} />
         <Route path="hr" element={<HRInterviewPage />} />

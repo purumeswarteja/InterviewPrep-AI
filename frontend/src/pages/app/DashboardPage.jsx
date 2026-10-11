@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Calculator, Brain, Mic, FileText, TrendingUp, Flame, Target, Award,
+  Calculator, Puzzle, Brain, Mic, FileText, TrendingUp, Flame, Target, Award,
   ArrowRight, Clock, Play, Zap, ChevronRight, Star, X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -18,6 +18,14 @@ const quickActions = [
     desc: 'Math, ratios, speeds & logic',
     gradient: 'linear-gradient(135deg, #059669, #047857)',
     shadow: 'rgba(5,150,105,0.35)',
+  },
+  {
+    to: '/app/reasoning',
+    icon: Puzzle,
+    label: 'Logical Reasoning',
+    desc: 'Series, coding, blood relations',
+    gradient: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
+    shadow: 'rgba(139,92,246,0.35)',
   },
   {
     to: '/app/mock-interview',
@@ -40,8 +48,8 @@ const quickActions = [
     icon: FileText,
     label: 'Resume Analyzer',
     desc: 'ATS score & smart feedback',
-    gradient: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-    shadow: 'rgba(124,58,237,0.35)',
+    gradient: 'linear-gradient(135deg, #ec4899, #db2777)',
+    shadow: 'rgba(236,72,153,0.35)',
   },
 ];
 
@@ -204,7 +212,7 @@ export default function DashboardPage() {
         <h2 className="font-bold text-lg mb-4" style={{ color: '#0c0f1a', fontFamily: 'Space Grotesk, Inter, sans-serif' }}>
           Quick Actions
         </h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {quickActions.map((a) => (
             <Link to={a.to} key={a.to}>
               <div

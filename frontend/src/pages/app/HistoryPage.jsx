@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  History, Brain, Mic, FileText, Clock, Trash2, Eye, X, Award, Sparkles, UserCheck, Layers
+  History, Brain, Mic, FileText, Clock, Trash2, Eye, X, Award, Sparkles, UserCheck, Layers, CheckCircle2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
@@ -248,14 +248,16 @@ export default function HistoryPage() {
                           <p className="text-xs text-gray-800 leading-relaxed">{answerText}</p>
                         </div>
 
-                        {/* Evaluation Notes */}
-                        {feedback && (
-                          <div className="bg-emerald-50/70 rounded-xl p-3 border border-emerald-100 text-xs text-emerald-950">
-                            <p className="font-bold text-emerald-800 flex items-center gap-1.5 mb-0.5">
-                              <Award className="w-3.5 h-3.5 text-emerald-600" />
-                              AI Evaluation Feedback
+                        {/* Actual / Model Answer */}
+                        {(qa.actual_answer || qa.explanation || feedback) && (
+                          <div className="bg-blue-50/70 rounded-xl p-3.5 border border-blue-200/80 text-xs text-blue-950 space-y-1">
+                            <p className="font-bold text-blue-900 flex items-center gap-1.5 mb-0.5">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+                              Actual Answer
                             </p>
-                            <p className="text-gray-800 leading-relaxed">{feedback}</p>
+                            <p className="text-gray-800 leading-relaxed whitespace-pre-line">
+                              {qa.actual_answer || qa.explanation || feedback}
+                            </p>
                           </div>
                         )}
                       </div>

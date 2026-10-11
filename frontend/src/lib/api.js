@@ -159,6 +159,13 @@ const generateAptitudeQuestions = async (payload) => {
   });
 };
 
+const generateReasoningQuestions = async (payload) => {
+  return request("/api/ai/generate-reasoning-questions", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+};
+
 export const api = {
   signup,
   login,
@@ -173,6 +180,7 @@ export const api = {
   generateNextQuestion,
   generateHRQuestion,
   generateAptitudeQuestions,
+  generateReasoningQuestions,
   getAnalytics,
   passwordReset,
   deleteAccount,

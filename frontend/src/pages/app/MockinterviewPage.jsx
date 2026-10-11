@@ -144,6 +144,18 @@ export default function MockInterviewPage() {
     toast.success(`Mock Interview Started! Focus: ${skill.trim()}`);
   };
 
+  // Helper to detect non-answers / "I don't know" / empty answers
+  const isNonAnswer = (text) => {
+    if (!text || typeof text !== 'string') return true;
+    const clean = text.trim().toLowerCase();
+    if (!clean || clean === '(skipped by user)' || clean === '(no response)') return true;
+    const nonAnswerRegex = /\b(i\s*don'?t\s*know|don'?t\s*know|dont\s*know|no\s*idea|dunno|not\s*sure|idk|i\s*do\s*not\s*know|have\s*no\s*idea|cannot\s*answer|can'?t\s*answer|no\s*answer|skip|blank|nothing|n\/a|na|i\s*dont\s*remember|dont\s*remember|i\s*don\s*tknow|don\s*tknow)\b/i;
+    if (nonAnswerRegex.test(clean)) return true;
+    const words = clean.split(/\s+/).filter(Boolean);
+    if (words.length < 3 && clean.length < 15) return true;
+    return false;
+  };
+
   // ─── 2. Process Answer & Move to Next Question ─────────────────────────────
   const processAnswerSubmission = async (answerToSubmit, isSkipped = false) => {
     if (speechState === 'listening') {
@@ -162,15 +174,17 @@ export default function MockInterviewPage() {
     setCurrentAnswerText('');
     resetSpeech();
 
+    const candidateIsNonAnswer = isSkipped || isNonAnswer(finalAnswer);
+
     // Check if interview completed
     if (currentQuestionNum >= totalQuestions) {
       setStage('loading');
       setLoadingMsg('AI is calculating final interview evaluations...');
 
       let finalEval = {
-        score: isSkipped ? 0 : 75,
-        verdict: isSkipped ? 'Skipped' : 'Satisfactory',
-        feedback: isSkipped ? 'Question skipped.' : 'Good answer provided.'
+        score: candidateIsNonAnswer ? 0 : 35,
+        verdict: candidateIsNonAnswer ? 'Needs Improvement' : 'Evaluated',
+        actual_answer: `For "${currentQuestionText}", an ideal answer covers the fundamental mechanisms, component architecture, error handling strategies, and production performance trade-offs in ${skill.trim()}.`
       };
 
       try {
@@ -181,14 +195,14 @@ export default function MockInterviewPage() {
             topic: skill,
             difficulty
           }),
-          6000
+          12000
         );
 
         if (evalRes?.evaluation) {
           finalEval = {
-            score: evalRes.evaluation.score ?? 75,
-            verdict: evalRes.evaluation.verdict || 'Evaluated',
-            feedback: evalRes.evaluation.feedback_notes || 'Answer evaluated.'
+            score: candidateIsNonAnswer ? 0 : (evalRes.evaluation.score ?? 0),
+            verdict: candidateIsNonAnswer ? 'Needs Improvement' : (evalRes.evaluation.verdict || 'Evaluated'),
+            actual_answer: evalRes.evaluation.actual_answer || evalRes.evaluation.improved_sample_answer || evalRes.evaluation.feedback_notes || finalEval.actual_answer
           };
         }
       } catch (err) {
@@ -208,9 +222,9 @@ export default function MockInterviewPage() {
     let nextQText = '';
     let nextFocus = skill.trim();
     let prevEval = {
-      score: isSkipped ? 0 : 75,
-      verdict: isSkipped ? 'Skipped' : 'Evaluated',
-      feedback: isSkipped ? 'Question skipped.' : 'Satisfactory answer.'
+      score: candidateIsNonAnswer ? 0 : 35,
+      verdict: candidateIsNonAnswer ? 'Needs Improvement' : 'Evaluated',
+      actual_answer: `For "${currentQuestionText}", an ideal answer covers the fundamental mechanisms, component architecture, error handling strategies, and production performance trade-offs in ${skill.trim()}.`
     };
 
     try {
@@ -224,14 +238,19 @@ export default function MockInterviewPage() {
           previousQuestions: questionsList,
           previousAnswers: newAnswers
         }),
-        8000
+        12000
       );
 
       if (res && res.result && res.result.question) {
         nextQText = res.result.question;
         nextFocus = res.result.focus_concept || skill.trim();
         if (res.result.evaluation_of_previous) {
-          prevEval = res.result.evaluation_of_previous;
+          const evalPrev = res.result.evaluation_of_previous;
+          prevEval = {
+            score: candidateIsNonAnswer ? 0 : (evalPrev.score ?? 0),
+            verdict: candidateIsNonAnswer ? 'Needs Improvement' : (evalPrev.verdict || 'Evaluated'),
+            actual_answer: evalPrev.actual_answer || evalPrev.feedback || prevEval.actual_answer
+          };
         }
       }
     } catch (err) {
@@ -265,15 +284,16 @@ export default function MockInterviewPage() {
     const validScores = finalEvals.map(e => Number(e.score)).filter(s => !isNaN(s) && s !== null);
     const avgScore = validScores.length
       ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
-      : 70;
+      : 0;
 
     const formattedQAs = finalQuestions.map((qText, idx) => ({
       id: `q-${idx + 1}`,
       question: qText,
       answer: finalAnswers[idx] || '(No response)',
-      score: finalEvals[idx]?.score ?? 70,
+      score: finalEvals[idx]?.score ?? 0,
       verdict: finalEvals[idx]?.verdict || 'Completed',
-      feedback: finalEvals[idx]?.feedback || 'Evaluation completed.'
+      actual_answer: finalEvals[idx]?.actual_answer || '',
+      feedback: finalEvals[idx]?.actual_answer || 'Evaluation completed.'
     }));
 
     if (user) {
@@ -713,7 +733,7 @@ export default function MockInterviewPage() {
   const validScores = evaluationsList.map(e => Number(e.score)).filter(s => !isNaN(s) && s !== null);
   const finalAvgScore = validScores.length
     ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
-    : 70;
+    : 0;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
@@ -735,11 +755,11 @@ export default function MockInterviewPage() {
 
         <div className="space-y-1">
           <p className="text-base font-semibold text-gray-900">
-            {finalAvgScore >= 80
+            {finalAvgScore >= 75
               ? 'Outstanding performance!'
-              : finalAvgScore >= 60
+              : finalAvgScore >= 50
               ? 'Good effort! Keep practicing to strengthen key concepts.'
-              : 'Keep practicing! Review individual feedback below.'}
+              : 'Keep practicing! Review the actual answers below to improve.'}
           </p>
           <p className="text-xs text-gray-500">
             Role: <strong>{role || 'General'}</strong> • Skill: <strong>{skill}</strong> • {totalQuestions} Questions • Duration: {formatDuration(elapsedSeconds)}
@@ -774,7 +794,8 @@ export default function MockInterviewPage() {
         {questionsList.map((qText, idx) => {
           const ansText = answersList[idx] || '(No response)';
           const evalObj = evaluationsList[idx] || {};
-          const score = evalObj.score ?? 70;
+          const score = evalObj.score !== undefined && evalObj.score !== null ? Number(evalObj.score) : 0;
+          const actualAnswerText = evalObj.actual_answer || evalObj.feedback || '';
 
           return (
             <Card key={idx} className="p-5 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-3">
@@ -788,9 +809,9 @@ export default function MockInterviewPage() {
                 <span
                   className={cn(
                     'px-3 py-1 rounded-full text-xs font-bold flex-shrink-0',
-                    score >= 80
+                    score >= 70
                       ? 'bg-emerald-100 text-emerald-800'
-                      : score >= 60
+                      : score >= 40
                       ? 'bg-amber-100 text-amber-800'
                       : 'bg-red-100 text-red-800'
                   )}
@@ -799,7 +820,7 @@ export default function MockInterviewPage() {
                 </span>
               </div>
 
-              {/* Answer Text */}
+              {/* Candidate Answer */}
               <div className="bg-gray-50 rounded-xl p-3.5 border border-gray-100">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
                   Candidate Answer
@@ -809,15 +830,15 @@ export default function MockInterviewPage() {
                 </p>
               </div>
 
-              {/* Internal AI Evaluation Feedback */}
-              {evalObj.feedback && (
-                <div className="bg-emerald-50/60 rounded-xl p-3.5 border border-emerald-100">
-                  <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-emerald-600" />
-                    AI Evaluation & Feedback
+              {/* Actual / Model Answer */}
+              {actualAnswerText && (
+                <div className="bg-blue-50/70 rounded-xl p-4 border border-blue-200/80 space-y-1.5 text-blue-950">
+                  <p className="text-xs font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                    Actual Answer
                   </p>
-                  <p className="text-sm text-gray-800 leading-relaxed">
-                    {evalObj.feedback}
+                  <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">
+                    {actualAnswerText}
                   </p>
                 </div>
               )}
