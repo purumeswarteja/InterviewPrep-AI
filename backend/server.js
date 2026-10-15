@@ -449,7 +449,8 @@ app.post('/api/ai/generate-next-question', async (req, res) => {
       totalQuestions = 5,
       currentQuestion = 2,
       previousQuestions = [],
-      previousAnswers = []
+      previousAnswers = [],
+      allPreviousQuestions = []   // cross-session history from localStorage
     } = req.body;
 
     const lastQ = previousQuestions[previousQuestions.length - 1] || '';
@@ -481,7 +482,10 @@ Do not include any conversational filler. State the core concept, key components
       };
     }
 
-    // 2. Prepare Gemini prompt to evaluate previous QA (if not already 0) and generate next question
+    // Merge current session + cross-session history for the forbidden list
+    const allAsked = [...new Set([...(allPreviousQuestions || []), ...(previousQuestions || [])])];
+
+    // 2. Prepare Gemini prompt to evaluate previous QA and generate next question
     const prompt = `You are a Senior Technical Interviewer conducting a mock interview for the role of "${role}" with primary technical focus on "${skill}".
 Difficulty Level: ${difficulty}
 Current Question Number: ${currentQuestion} of ${totalQuestions}
@@ -489,8 +493,8 @@ Current Question Number: ${currentQuestion} of ${totalQuestions}
 ${lastQ ? `PREVIOUS QUESTION: "${lastQ}"
 CANDIDATE ANSWER: "${lastA}"` : ''}
 
-PREVIOUSLY ASKED QUESTIONS IN THIS SESSION (DO NOT REPEAT ANY OF THESE):
-${(previousQuestions || []).map((q, i) => `${i + 1}. ${q}`).join('\n')}
+⛔ FORBIDDEN QUESTIONS — NEVER ASK THESE OR ANY VARIATION OF THESE (from current AND previous sessions):
+${allAsked.length > 0 ? allAsked.map((q, i) => `${i + 1}. ${q}`).join('\n') : 'None yet — but still generate a fresh, unique question.'}
 
 INSTRUCTIONS:
 1. ${lastQ ? `Evaluate the candidate's previous answer strictly:
@@ -499,9 +503,10 @@ INSTRUCTIONS:
    - If partially correct: score 45-70.
    - If complete and accurate: score 75-100.
    - Provide a comprehensive, accurate "actual_answer" explaining the correct technical solution.` : ''}
-2. Generate the NEXT dynamic, high-quality technical question strictly focused on "${skill}" (in the context of a ${role}).
-   - The question must be NEW and test a different facet of ${skill}.
-   - Do NOT repeat or rephrase any previous questions.
+2. Generate the NEXT unique technical question strictly focused on "${skill}" (context: ${role}).
+   - MUST be completely different from every question in the FORBIDDEN list above.
+   - Test a DIFFERENT sub-topic, concept, or real-world scenario of ${skill} each time.
+   - Vary the angle: scenario-based, trade-off analysis, debugging, architecture, security, scaling, testing, best practices — rotate through these.
 
 Respond ONLY with valid JSON in this exact structure:
 {
@@ -585,13 +590,17 @@ app.post('/api/ai/generate-hr-question', async (req, res) => {
       totalQuestions = 5,
       currentQuestion = 1,
       previousQuestions = [],
-      previousAnswers = []
+      previousAnswers = [],
+      allPreviousQuestions = []   // cross-session history from localStorage
     } = req.body;
 
     const prevQAFormatted = (previousQuestions || []).map((q, idx) => {
       const a = (previousAnswers && previousAnswers[idx]) ? previousAnswers[idx] : '(Skipped / No response)';
       return `Question ${idx + 1}: ${q}\nAnswer ${idx + 1}: ${a}`;
     }).join('\n\n');
+
+    // Merge current session + cross-session history for forbidden list
+    const allAsked = [...new Set([...(allPreviousQuestions || []), ...(previousQuestions || [])])];
 
     const prompt = `You are a Senior HR Director and Behavioral Interviewer.
 Target Role Context: ${role || 'General Position'}
@@ -602,15 +611,17 @@ Current Question Number: ${currentQuestion}
 Previous Questions and Answers in this Interview:
 ${prevQAFormatted || 'None (This is the first question of the HR round)'}
 
+⛔ FORBIDDEN QUESTIONS — NEVER ASK THESE OR ANY VARIATION/REPHRASE OF THESE (from current AND all previous sessions):
+${allAsked.length > 0 ? allAsked.map((q, i) => `${i + 1}. ${q}`).join('\n') : 'None yet — still generate a fresh, unique question.'}
+
 CRITICAL RULES FOR ADAPTIVE HR INTERVIEWING:
 1. Focus on the selected HR Topic Block: ${topicName}.
 2. ADAPTIVE FOLLOW-UP RULE: Analyze the candidate's LAST answer (if present).
    - If the candidate mentioned a specific conflict, project detail, mistake, decision, or event that warrants deeper exploration, ask a natural, conversational FOLLOW-UP question about that specific lead.
    - Example: If candidate said "I had a conflict with a teammate regarding architecture", ask: "How did you handle that conflict with your teammate, and what was the ultimate outcome?"
-3. STRICT NO REPEATED QUESTIONS OR CONCEPTS RULE:
-   - Carefully examine the Previous Questions listed above.
-   - NEVER re-ask a question, concept, or topic that was already asked in Previous Questions!
-   - If the previous question was an adaptive follow-up (e.g. asking how candidate overcame a weakness or conflict), DO NOT return to the initial question about strengths/weaknesses or conflicts. Immediately move forward to a NEW, UNASKED question or competency!
+3. STRICT NO REPEATED QUESTIONS RULE:
+   - NEVER re-ask anything from the FORBIDDEN list above, including rephrased or similar versions!
+   - Always move forward to an entirely new competency or angle not covered yet.
 4. Assess soft skills, communication clarity, situational judgment, STAR method structure, and culture fit.
 5. Keep questions professional, engaging, and direct.
 

@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Brain, Clock, ArrowRight, RotateCcw, Sparkles, Award,
-  CheckCircle2, Mic, MicOff, SkipForward, Play, RefreshCw,
-  AlertCircle, ChevronRight, FileText, Check, Layers, UserCheck
+  CheckCircle2, Mic, SkipForward, Play, RefreshCw,
+  AlertCircle, FileText, Check, Layers, UserCheck, Square, Edit3
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
@@ -11,12 +11,61 @@ import { api } from '../../lib/api';
 import { Card, Button, Badge, ScoreRing, ProgressBar } from '../../components/ui';
 import { cn, formatDuration } from '../../lib/utils';
 import { useSpeechRecognition } from '../../lib/useSpeechRecognition';
+import { speakText, stopSpeaking } from '../../lib/speech';
+
+// Large pool of fallback questions per skill type to avoid repetition
+const FALLBACK_QUESTION_POOLS = {
+  default: [
+    (s, r) => `Explain the core architecture and key components of ${s}. How do they interact in a production ${r} environment?`,
+    (s, r) => `What are common performance bottlenecks in ${s}, and how would you diagnose and resolve them as a ${r}?`,
+    (s, r) => `How do you implement robust error handling and fault tolerance in ${s}?`,
+    (s, r) => `Describe testing strategies (unit, integration, end-to-end) you use for ${s} applications.`,
+    (s, r) => `How do you handle security vulnerabilities and authentication in ${s}?`,
+    (s, r) => `Walk me through how you would design a scalable, high-availability system using ${s}.`,
+    (s, r) => `What are the trade-offs between different design patterns when building with ${s}?`,
+    (s, r) => `How do you manage state, concurrency, or asynchronous operations in ${s}?`,
+    (s, r) => `Describe a real-world debugging scenario in ${s} and how you resolved it.`,
+    (s, r) => `How do you ensure code maintainability and reduce technical debt in ${s} projects?`,
+    (s, r) => `Explain CI/CD integration and deployment strategies for ${s} applications.`,
+    (s, r) => `How do you approach monitoring, alerting, and observability in ${s}?`,
+  ]
+};
+
+function getFallbackQuestion(skill, role, usedQuestions, index) {
+  const pool = FALLBACK_QUESTION_POOLS.default;
+  const usedSet = new Set((usedQuestions || []).map(q => q.toLowerCase().slice(0, 40)));
+  const available = pool.filter((fn) => {
+    const q = fn(skill, role).toLowerCase().slice(0, 40);
+    return !usedSet.has(q);
+  });
+  if (available.length > 0) {
+    return available[index % available.length](skill, role);
+  }
+  return pool[index % pool.length](skill, role);
+}
 
 export default function MockInterviewPage() {
   const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
 
-  // ─── Setup Form State (Empty by default per user requirement) ────────────────
+  // ─── localStorage helpers for cross-session question deduplication ─────────
+  const loadAskedQuestions = (skillKey) => {
+    try {
+      const stored = localStorage.getItem(`mock_asked_${skillKey.toLowerCase().trim()}`);
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  };
+
+  const saveAskedQuestions = (skillKey, newQuestions) => {
+    try {
+      const existing = loadAskedQuestions(skillKey);
+      // Keep last 30 unique questions per skill — allows natural recycling after ~5-8 sessions
+      const merged = [...new Set([...existing, ...newQuestions])].slice(-30);
+      localStorage.setItem(`mock_asked_${skillKey.toLowerCase().trim()}`, JSON.stringify(merged));
+    } catch { /* ignore storage errors */ }
+  };
+
+  // ─── Setup Form State ────────────────────────────────────────────────────────
   const [role, setRole] = useState('');
   const [skill, setSkill] = useState('');
   const [difficulty, setDifficulty] = useState('');
@@ -29,6 +78,8 @@ export default function MockInterviewPage() {
   const [currentFocusConcept, setCurrentFocusConcept] = useState('');
   const [currentAnswerText, setCurrentAnswerText] = useState('');
   const [loadingMsg, setLoadingMsg] = useState('');
+  const [isSpeakingQuestion, setIsSpeakingQuestion] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
 
   // Recorded history for the session
   const [questionsList, setQuestionsList] = useState([]);
@@ -48,6 +99,46 @@ export default function MockInterviewPage() {
     stop: stopListening,
     reset: resetSpeech
   } = useSpeechRecognition();
+
+  const isRecording = speechState === 'listening' || speechState === 'recording_fallback';
+
+  // ─── Recording Timer ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (isRecording) {
+      stopSpeaking();
+      setIsSpeakingQuestion(false);
+      const t = setInterval(() => setRecordingTime((s) => s + 1), 1000);
+      return () => clearInterval(t);
+    } else {
+      setRecordingTime(0);
+    }
+  }, [isRecording]);
+
+  // ─── Auto-fill answer from live transcript ──────────────────────────────────
+  useEffect(() => {
+    if (transcript) {
+      setCurrentAnswerText(transcript);
+    }
+  }, [transcript]);
+
+  // ─── Auto-read question aloud when it appears ───────────────────────────────
+  const speakQuestionVoice = useCallback((text) => {
+    if (!text) return;
+    stopSpeaking();
+    setIsSpeakingQuestion(true);
+    speakText(text, {
+      onStart: () => setIsSpeakingQuestion(true),
+      onEnd: () => setIsSpeakingQuestion(false),
+      onError: () => setIsSpeakingQuestion(false)
+    }).catch(() => setIsSpeakingQuestion(false));
+  }, []);
+
+  useEffect(() => {
+    if (stage === 'interview' && currentQuestionText) {
+      speakQuestionVoice(currentQuestionText);
+    }
+    return () => { stopSpeaking(); };
+  }, [stage, currentQuestionText, speakQuestionVoice]);
 
   // ─── Timer Controller ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -75,19 +166,9 @@ export default function MockInterviewPage() {
 
   // ─── 1. Start Interview Flow ────────────────────────────────────────────────
   const handleStartInterview = async () => {
-    // Required Validation: User MUST fill/select all 4 inputs
-    if (!role.trim()) {
-      toast.error('Please enter your Preferred Role.');
-      return;
-    }
-    if (!skill.trim()) {
-      toast.error('Please enter your Primary Skill / Technology.');
-      return;
-    }
-    if (!difficulty) {
-      toast.error('Please select a Difficulty Level (Easy, Medium, or Hard).');
-      return;
-    }
+    if (!role.trim()) { toast.error('Please enter your Preferred Role.'); return; }
+    if (!skill.trim()) { toast.error('Please enter your Primary Skill / Technology.'); return; }
+    if (!difficulty) { toast.error('Please select a Difficulty Level.'); return; }
     const qCount = parseInt(totalQuestions, 10);
     if (isNaN(qCount) || qCount < 1 || qCount > 15) {
       toast.error('Please select Number of Questions (between 1 and 15).');
@@ -106,6 +187,9 @@ export default function MockInterviewPage() {
     setStage('loading');
     setLoadingMsg(`AI Interviewer is preparing Question 1 for ${skill}...`);
 
+    // Load cross-session history for this skill
+    const crossSessionHistory = loadAskedQuestions(skill.trim());
+
     let questionSuccess = false;
 
     try {
@@ -117,7 +201,8 @@ export default function MockInterviewPage() {
           totalQuestions: qCount,
           currentQuestion: 1,
           previousQuestions: [],
-          previousAnswers: []
+          previousAnswers: [],
+          allPreviousQuestions: crossSessionHistory
         }),
         9000
       );
@@ -132,9 +217,8 @@ export default function MockInterviewPage() {
       console.warn('AI start interview error/timeout, using fallback:', err.message);
     }
 
-    // Safety Fallback if API fails or times out (Prevents stuck loading loop!)
     if (!questionSuccess) {
-      const fallbackQ = `Explain the core principles and component lifecycle in ${skill.trim()}, and how you apply them as a ${role.trim()}.`;
+      const fallbackQ = getFallbackQuestion(skill.trim(), role.trim(), [], 0);
       setCurrentQuestionText(fallbackQ);
       setCurrentFocusConcept(`${skill.trim()} Fundamentals`);
       setQuestionsList([fallbackQ]);
@@ -144,12 +228,12 @@ export default function MockInterviewPage() {
     toast.success(`Mock Interview Started! Focus: ${skill.trim()}`);
   };
 
-  // Helper to detect non-answers / "I don't know" / empty answers
+  // Helper to detect non-answers
   const isNonAnswer = (text) => {
     if (!text || typeof text !== 'string') return true;
     const clean = text.trim().toLowerCase();
     if (!clean || clean === '(skipped by user)' || clean === '(no response)') return true;
-    const nonAnswerRegex = /\b(i\s*don'?t\s*know|don'?t\s*know|dont\s*know|no\s*idea|dunno|not\s*sure|idk|i\s*do\s*not\s*know|have\s*no\s*idea|cannot\s*answer|can'?t\s*answer|no\s*answer|skip|blank|nothing|n\/a|na|i\s*dont\s*remember|dont\s*remember|i\s*don\s*tknow|don\s*tknow)\b/i;
+    const nonAnswerRegex = /\b(i\s*don'?t\s*know|don'?t\s*know|dont\s*know|no\s*idea|dunno|not\s*sure|idk|i\s*do\s*not\s*know|have\s*no\s*idea|cannot\s*answer|can'?t\s*answer|no\s*answer|skip|blank|nothing|n\/a|na|i\s*dont\s*remember|dont\s*remember)\b/i;
     if (nonAnswerRegex.test(clean)) return true;
     const words = clean.split(/\s+/).filter(Boolean);
     if (words.length < 3 && clean.length < 15) return true;
@@ -158,14 +242,12 @@ export default function MockInterviewPage() {
 
   // ─── 2. Process Answer & Move to Next Question ─────────────────────────────
   const processAnswerSubmission = async (answerToSubmit, isSkipped = false) => {
-    if (speechState === 'listening') {
-      stopListening();
-    }
+    if (speechState === 'listening') { stopListening(); }
 
     const finalAnswer = isSkipped ? '(Skipped by user)' : answerToSubmit.trim();
 
     if (!isSkipped && !finalAnswer) {
-      toast.error('Please write or speak an answer before submitting, or click Skip.');
+      toast.error('Please speak or type your answer before submitting, or click Skip.');
       return;
     }
 
@@ -173,10 +255,10 @@ export default function MockInterviewPage() {
     setAnswersList(newAnswers);
     setCurrentAnswerText('');
     resetSpeech();
+    stopSpeaking();
 
     const candidateIsNonAnswer = isSkipped || isNonAnswer(finalAnswer);
 
-    // Check if interview completed
     if (currentQuestionNum >= totalQuestions) {
       setStage('loading');
       setLoadingMsg('AI is calculating final interview evaluations...');
@@ -184,30 +266,22 @@ export default function MockInterviewPage() {
       let finalEval = {
         score: candidateIsNonAnswer ? 0 : 35,
         verdict: candidateIsNonAnswer ? 'Needs Improvement' : 'Evaluated',
-        actual_answer: `For "${currentQuestionText}", an ideal answer covers the fundamental mechanisms, component architecture, error handling strategies, and production performance trade-offs in ${skill.trim()}.`
+        actual_answer: `For "${currentQuestionText}", an ideal answer covers the core principles, architecture patterns, error handling, and production trade-offs in ${skill.trim()}.`
       };
 
       try {
         const evalRes = await fetchWithTimeout(
-          api.evaluateInterviewWithAI({
-            question: currentQuestionText,
-            answer: finalAnswer,
-            topic: skill,
-            difficulty
-          }),
+          api.evaluateInterviewWithAI({ question: currentQuestionText, answer: finalAnswer, topic: skill, difficulty }),
           12000
         );
-
         if (evalRes?.evaluation) {
           finalEval = {
             score: candidateIsNonAnswer ? 0 : (evalRes.evaluation.score ?? 0),
             verdict: candidateIsNonAnswer ? 'Needs Improvement' : (evalRes.evaluation.verdict || 'Evaluated'),
-            actual_answer: evalRes.evaluation.actual_answer || evalRes.evaluation.improved_sample_answer || evalRes.evaluation.feedback_notes || finalEval.actual_answer
+            actual_answer: evalRes.evaluation.actual_answer || evalRes.evaluation.improved_sample_answer || finalEval.actual_answer
           };
         }
-      } catch (err) {
-        console.warn('Final question evaluation timeout fallback:', err.message);
-      }
+      } catch (err) { console.warn('Final question evaluation timeout fallback:', err.message); }
 
       const updatedEvals = [...evaluationsList, finalEval];
       setEvaluationsList(updatedEvals);
@@ -215,16 +289,15 @@ export default function MockInterviewPage() {
       return;
     }
 
-    // Move to Next Question
     setStage('loading');
-    setLoadingMsg(`AI is evaluating answer and preparing Question ${currentQuestionNum + 1}...`);
+    setLoadingMsg(`AI is evaluating your answer and preparing Question ${currentQuestionNum + 1}...`);
 
     let nextQText = '';
     let nextFocus = skill.trim();
     let prevEval = {
       score: candidateIsNonAnswer ? 0 : 35,
       verdict: candidateIsNonAnswer ? 'Needs Improvement' : 'Evaluated',
-      actual_answer: `For "${currentQuestionText}", an ideal answer covers the fundamental mechanisms, component architecture, error handling strategies, and production performance trade-offs in ${skill.trim()}.`
+      actual_answer: `For "${currentQuestionText}", an ideal answer covers the core principles, architecture, error handling, and optimization techniques in ${skill.trim()}.`
     };
 
     try {
@@ -236,7 +309,8 @@ export default function MockInterviewPage() {
           totalQuestions,
           currentQuestion: currentQuestionNum + 1,
           previousQuestions: questionsList,
-          previousAnswers: newAnswers
+          previousAnswers: newAnswers,
+          allPreviousQuestions: loadAskedQuestions(skill.trim())
         }),
         12000
       );
@@ -253,18 +327,10 @@ export default function MockInterviewPage() {
           };
         }
       }
-    } catch (err) {
-      console.warn('Next question fetch timeout/error, using fallback:', err.message);
-    }
+    } catch (err) { console.warn('Next question fetch timeout/error, using fallback:', err.message); }
 
-    // Safety Fallback for next question
     if (!nextQText) {
-      const fallbackQuestions = [
-        `What are common performance bottlenecks when working with ${skill.trim()}, and how do you resolve them in ${role.trim()} projects?`,
-        `How do you implement error handling, state management, or asynchronous tasks in ${skill.trim()}?`,
-        `Describe how you test and maintain code quality when building applications with ${skill.trim()}.`
-      ];
-      nextQText = fallbackQuestions[currentQuestionNum % fallbackQuestions.length];
+      nextQText = getFallbackQuestion(skill.trim(), role.trim(), questionsList, currentQuestionNum);
     }
 
     const newEvals = [...evaluationsList, prevEval];
@@ -274,12 +340,11 @@ export default function MockInterviewPage() {
     setQuestionsList(newQuestions);
     setCurrentQuestionText(nextQText);
     setCurrentFocusConcept(nextFocus);
-
     setCurrentQuestionNum((prev) => prev + 1);
     setStage('interview');
   };
 
-  // ─── 3. Finish & Save Session to Backend DB ──────────────────────────────────
+  // ─── 3. Finish & Save Session ─────────────────────────────────────────────
   const finishAndSaveSession = async (finalQuestions, finalAnswers, finalEvals) => {
     const validScores = finalEvals.map(e => Number(e.score)).filter(s => !isNaN(s) && s !== null);
     const avgScore = validScores.length
@@ -295,6 +360,9 @@ export default function MockInterviewPage() {
       actual_answer: finalEvals[idx]?.actual_answer || '',
       feedback: finalEvals[idx]?.actual_answer || 'Evaluation completed.'
     }));
+
+    // Save all answered questions to localStorage for future session deduplication
+    saveAskedQuestions(skill.trim(), finalQuestions);
 
     if (user) {
       try {
@@ -314,29 +382,12 @@ export default function MockInterviewPage() {
           feedback: { summary: `Interview completed for ${skill} (${difficulty})`, avg_score: avgScore },
           status: 'completed'
         };
-
         const res = await api.createSession(payload);
-        if (!res.error) {
-          await refreshProfile();
-        }
-      } catch (err) {
-        console.error('Failed to save session:', err);
-      }
+        if (!res.error) { await refreshProfile(); }
+      } catch (err) { console.error('Failed to save session:', err); }
     }
 
     setStage('completed');
-  };
-
-  // Voice transcript helpers
-  const handleApplySpeechTranscript = (replace = false) => {
-    if (!transcript) return;
-    if (replace) {
-      setCurrentAnswerText(transcript);
-    } else {
-      setCurrentAnswerText((prev) => (prev ? `${prev} ${transcript}` : transcript));
-    }
-    resetSpeech();
-    toast.success('Speech inserted into answer box!');
   };
 
   // ─── RENDER: 1. SETUP STAGE ─────────────────────────────────────────────────
@@ -349,20 +400,12 @@ export default function MockInterviewPage() {
             <Brain className="w-8 h-8 text-emerald-600" />
             AI Mock Interview Setup
           </h1>
+          <p className="text-gray-600 text-sm mt-1">
+            Configure your technical interview. Gemini AI generates adaptive, unique questions every session.
+          </p>
         </div>
 
-        {/* Priority Rule Alert */}
-        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-start gap-3.5 text-sm text-emerald-900 shadow-sm">
-          <Sparkles className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-semibold text-emerald-950">Primary Skill Focus Rule</p>
-            <p className="text-emerald-800 text-xs mt-0.5 leading-relaxed">
-              <strong>Skill / Technology</strong> is the main interview focus. <strong>Preferred Role</strong> provides secondary domain context. All fields below are required.
-            </p>
-          </div>
-        </div>
-
-        {/* Form Inputs Card */}
+        {/* Config Card */}
         <Card className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-6">
           <div className="grid sm:grid-cols-2 gap-5">
             {/* Preferred Role */}
@@ -375,13 +418,13 @@ export default function MockInterviewPage() {
                 type="text"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                placeholder="Select or type role (e.g. Full Stack Developer)..."
+                placeholder="e.g. Full Stack Developer, Backend Engineer..."
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm text-gray-900 transition"
               />
-              <p className="text-[11px] text-gray-400 mt-1">Role context for scenario-based questions.</p>
+              <p className="text-[11px] text-gray-400 mt-1">Role provides domain context for scenario-based questions.</p>
             </div>
 
-            {/* Skill / Technology */}
+            {/* Primary Skill */}
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <Layers className="w-4 h-4 text-emerald-600" />
@@ -391,15 +434,15 @@ export default function MockInterviewPage() {
                 type="text"
                 value={skill}
                 onChange={(e) => setSkill(e.target.value)}
-                placeholder="Select or type skill (e.g. React, Node.js, Python)..."
+                placeholder="e.g. System Design, React, Python..."
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm text-gray-900 font-medium transition"
               />
-              <p className="text-[11px] text-gray-400 mt-1">Questions will test technical depth in this skill.</p>
+              <p className="text-[11px] text-gray-400 mt-1">All questions will test technical depth in this skill.</p>
             </div>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-5 pt-2 border-t border-gray-100">
-            {/* Difficulty Level */}
+            {/* Difficulty */}
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
                 Difficulty Level <span className="text-red-500">*</span>
@@ -421,46 +464,36 @@ export default function MockInterviewPage() {
                   </button>
                 ))}
               </div>
-              {!difficulty && (
-                <p className="text-[11px] text-amber-600 mt-1">Please select difficulty level.</p>
-              )}
             </div>
 
-            {/* Number of Questions (Max 15) */}
+            {/* Number of Questions */}
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
                 Number of Questions (1-15) <span className="text-red-500">*</span>
               </label>
-              <div>
-                <input
-                  type="number"
-                  min={1}
-                  max={15}
-                  placeholder="Enter number (e.g. 5)"
-                  value={totalQuestions}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === '') {
-                      setTotalQuestions('');
-                    } else {
-                      const parsed = parseInt(val, 10);
-                      if (!isNaN(parsed)) {
-                        setTotalQuestions(Math.max(1, Math.min(15, parsed)));
-                      }
-                    }
-                  }}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm font-semibold text-gray-900 transition"
-                />
-              </div>
+              <input
+                type="number"
+                min={1}
+                max={15}
+                placeholder="Enter number (e.g. 5)"
+                value={totalQuestions}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') { setTotalQuestions(''); }
+                  else {
+                    const parsed = parseInt(val, 10);
+                    if (!isNaN(parsed)) setTotalQuestions(Math.max(1, Math.min(15, parsed)));
+                  }
+                }}
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm font-semibold text-gray-900 transition"
+              />
             </div>
           </div>
 
           {/* Quick Select Presets */}
           <div className="pt-2 border-t border-gray-100 space-y-3">
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Quick Select Role:
-              </p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Quick Select Role:</p>
               <div className="flex flex-wrap gap-2">
                 {['Full Stack Developer', 'Frontend Engineer', 'Backend Developer', 'Data Scientist', 'DevOps Lead', 'Mobile App Developer'].map((r) => (
                   <button
@@ -469,36 +502,25 @@ export default function MockInterviewPage() {
                     onClick={() => setRole(r)}
                     className={cn(
                       'px-3 py-1.5 rounded-lg text-xs font-medium transition border',
-                      role === r
-                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-bold'
-                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                      role === r ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-bold' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
                     )}
-                  >
-                    {r}
-                  </button>
+                  >{r}</button>
                 ))}
               </div>
             </div>
-
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Quick Select Skill:
-              </p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Quick Select Skill:</p>
               <div className="flex flex-wrap gap-2">
-                {['React', 'Node.js', 'Python', 'JavaScript', 'SQL', 'Data Structures', 'System Design', 'Docker', 'Machine Learning'].map((s) => (
+                {['System Design', 'React', 'Node.js', 'Python', 'JavaScript', 'SQL', 'Data Structures', 'Docker', 'Machine Learning'].map((s) => (
                   <button
                     key={s}
                     type="button"
                     onClick={() => setSkill(s)}
                     className={cn(
                       'px-3 py-1.5 rounded-lg text-xs font-medium transition border',
-                      skill.toLowerCase() === s.toLowerCase()
-                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-bold'
-                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                      skill.toLowerCase() === s.toLowerCase() ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-bold' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
                     )}
-                  >
-                    {s}
-                  </button>
+                  >{s}</button>
                 ))}
               </div>
             </div>
@@ -524,7 +546,7 @@ export default function MockInterviewPage() {
     );
   }
 
-  // ─── RENDER: 2. LOADING STATE ──────────────────────────────────────────────
+  // ─── RENDER: 2. LOADING STATE ───────────────────────────────────────────────
   if (stage === 'loading') {
     return (
       <div className="max-w-2xl mx-auto my-16 text-center space-y-6 animate-fade-in">
@@ -532,27 +554,23 @@ export default function MockInterviewPage() {
           <RefreshCw className="w-10 h-10 animate-spin" />
         </div>
         <div className="space-y-2">
-          <h2 className="font-display font-bold text-2xl text-gray-900">
-            Generating Dynamic Question
-          </h2>
-          <p className="text-emerald-700 font-medium text-sm">
-            {loadingMsg}
-          </p>
+          <h2 className="font-display font-bold text-2xl text-gray-900">Generating Dynamic Question</h2>
+          <p className="text-emerald-700 font-medium text-sm">{loadingMsg}</p>
           <p className="text-xs text-gray-400 max-w-sm mx-auto">
-            Gemini is tailoring technical questions for <strong>{skill}</strong> ({role || 'General'}).
+            Gemini AI is tailoring unique technical questions for <strong>{skill}</strong> ({role || 'General'}).
           </p>
         </div>
       </div>
     );
   }
 
-  // ─── RENDER: 3. ACTIVE INTERVIEW STAGE ─────────────────────────────────────
+  // ─── RENDER: 3. ACTIVE INTERVIEW STAGE (HR-style) ──────────────────────────
   if (stage === 'interview') {
     const progress = (currentQuestionNum / totalQuestions) * 100;
 
     return (
       <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
-        {/* Header Progress & Metadata Bar */}
+        {/* Progress & Info Header */}
         <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -563,137 +581,133 @@ export default function MockInterviewPage() {
                 <Badge color="brand">{difficulty}</Badge>
               </div>
               <p className="text-xs text-gray-500 mt-0.5">
-                Role: <strong className="text-gray-800">{role || 'General'}</strong> • Skill: <strong className="text-emerald-700">{skill}</strong>
+                Skill: <strong className="text-emerald-700">{skill}</strong> {role ? `• Role: ${role}` : ''}
               </p>
             </div>
-
-            {/* Timer Display */}
+            {/* Timer */}
             <div className="flex items-center gap-2 px-3.5 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-bold text-gray-700">
               <Clock className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
               <span>{formatDuration(elapsedSeconds)}</span>
             </div>
           </div>
-
           <ProgressBar value={progress} color="brand" />
         </div>
 
-        {/* AI Question Card */}
-        <Card className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-3">
-          <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white flex-shrink-0 shadow-sm">
-              <Brain className="w-5 h-5" />
-            </div>
-            <div className="space-y-1 flex-1">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
-                  AI Technical Interviewer
-                </p>
-                {currentFocusConcept && (
-                  <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md font-medium">
-                    Topic: {currentFocusConcept}
-                  </span>
+        {/* AI Question Card (HR-style with speaking avatar & replay button) */}
+        <Card className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm border-l-4 border-l-emerald-600">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div
+                className={cn(
+                  'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-white transition-all',
+                  isSpeakingQuestion ? 'bg-emerald-500 animate-bounce shadow-lg shadow-emerald-200' : 'bg-emerald-600 shadow-sm'
                 )}
+              >
+                <Brain className="w-5 h-5" />
               </div>
-              <p className="text-gray-900 font-semibold text-base sm:text-lg leading-relaxed">
-                {currentQuestionText}
-              </p>
+              <div className="space-y-1 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
+                    AI Technical Interviewer
+                  </p>
+                  {isSpeakingQuestion && (
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full animate-pulse">
+                      Speaking...
+                    </span>
+                  )}
+                  {currentFocusConcept && (
+                    <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md font-medium ml-auto">
+                      {currentFocusConcept}
+                    </span>
+                  )}
+                </div>
+                <p className="text-gray-900 font-semibold text-base sm:text-lg leading-relaxed">
+                  {currentQuestionText}
+                </p>
+              </div>
             </div>
+            {/* Replay voice button */}
+            <button
+              type="button"
+              onClick={() => speakQuestionVoice(currentQuestionText)}
+              className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition flex-shrink-0"
+              title="Replay question voice"
+            >
+              <Play className="w-4 h-4 fill-current" />
+            </button>
           </div>
         </Card>
 
-        {/* Answer Box & Voice Integration Card */}
-        <Card className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
-              Your Technical Answer
-            </label>
-
-            {/* Speech-to-Text Mic Toggle */}
-            <div className="flex items-center gap-2">
-              {speechState === 'listening' ? (
-                <button
-                  type="button"
-                  onClick={stopListening}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 text-xs font-semibold transition animate-pulse"
-                >
-                  <MicOff className="w-3.5 h-3.5" />
-                  Stop Voice Mic
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={startListening}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-semibold transition"
-                >
-                  <Mic className="w-3.5 h-3.5 text-emerald-600" />
-                  Speak Answer (Voice STT)
-                </button>
+        {/* Answer Card — HR-style centered mic + waveform */}
+        <Card className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-5">
+          {/* Large Centered Mic Button */}
+          <div className="flex flex-col items-center justify-center py-4 border-b border-gray-100">
+            <button
+              type="button"
+              onClick={isRecording ? stopListening : startListening}
+              className={cn(
+                'w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer shadow-lg',
+                isRecording
+                  ? 'bg-red-500 animate-pulse scale-110 shadow-red-200'
+                  : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20 hover:scale-105'
               )}
-            </div>
+            >
+              {isRecording ? <Square className="w-8 h-8 text-white" /> : <Mic className="w-8 h-8 text-white" />}
+            </button>
+
+            <p className="mt-3 text-sm font-semibold text-gray-800">
+              {isRecording
+                ? `Recording Voice… ${Math.floor(recordingTime / 60)}:${String(recordingTime % 60).padStart(2, '0')}`
+                : 'Click microphone to speak your answer'}
+            </p>
+
+            {/* Audio Waveform Visualizer */}
+            {isRecording && (
+              <div className="flex items-center gap-1 mt-3">
+                {[40, 70, 30, 90, 50, 80, 40, 60].map((h, i) => (
+                  <div
+                    key={i}
+                    className="w-1.5 bg-red-500 rounded-full animate-pulse"
+                    style={{ height: `${h}%`, animationDuration: `${0.4 + (i % 4) * 0.2}s` }}
+                  />
+                ))}
+              </div>
+            )}
+
+            {speechError && (
+              <div className="mt-3 flex items-start gap-2 max-w-md p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs">
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-600" />
+                <span>{speechError}</span>
+              </div>
+            )}
           </div>
 
-          {/* Voice Speech Transcript Preview */}
-          {transcript && (
-            <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-amber-900">
-                <span className="flex items-center gap-1.5">
-                  <Mic className="w-3.5 h-3.5 text-amber-600" />
-                  Voice Recognition Transcript:
-                </span>
-                <span className="text-amber-700 text-[11px] font-normal">Review before submitting</span>
-              </div>
-              <p className="text-xs text-amber-950 italic leading-relaxed">
-                "{transcript}"
-              </p>
-              <div className="flex gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => handleApplySpeechTranscript(false)}
-                  className="px-2.5 py-1 bg-amber-600 text-white rounded-lg text-xs font-semibold hover:bg-amber-700 transition"
-                >
-                  Append to Answer Box
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleApplySpeechTranscript(true)}
-                  className="px-2.5 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-xs font-semibold hover:bg-amber-200 transition"
-                >
-                  Replace Answer Box
-                </button>
-                <button
-                  type="button"
-                  onClick={resetSpeech}
-                  className="px-2.5 py-1 text-xs text-gray-500 hover:text-gray-700"
-                >
-                  Clear Transcript
-                </button>
-              </div>
+          {/* Editable Transcript Textarea */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                <Edit3 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Spoken Response & Editable Text</span>
+              </label>
+              <span className="text-xs text-gray-400">
+                {currentAnswerText.trim().split(/\s+/).filter(Boolean).length} words
+              </span>
             </div>
-          )}
+            <textarea
+              value={currentAnswerText}
+              onChange={(e) => setCurrentAnswerText(e.target.value)}
+              rows={5}
+              className="w-full p-4 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm text-gray-900 leading-relaxed transition resize-none"
+              placeholder="Your voice response will auto-fill here. You can also type or edit your answer..."
+            />
+          </div>
 
-          {speechError && (
-            <p className="text-xs text-red-500 bg-red-50 p-2 rounded-lg border border-red-100">
-              {speechError}
-            </p>
-          )}
-
-          {/* Text Area for Candidate Answer */}
-          <textarea
-            value={currentAnswerText}
-            onChange={(e) => setCurrentAnswerText(e.target.value)}
-            rows={7}
-            className="w-full p-4 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm text-gray-900 leading-relaxed transition resize-none"
-            placeholder="Type your detailed answer here or use the Speak Answer button above..."
-          />
-
-          {/* Active Control Bar */}
+          {/* Controls Bar */}
           <div className="flex items-center justify-between pt-2">
             <span className="text-xs text-gray-400">
               {currentAnswerText.trim().split(/\s+/).filter(Boolean).length} words written
             </span>
-
             <div className="flex items-center gap-2.5">
-              {/* Skip Question Button */}
               <Button
                 variant="outline"
                 type="button"
@@ -703,23 +717,15 @@ export default function MockInterviewPage() {
                 <SkipForward className="w-3.5 h-3.5" />
                 <span>Skip Question</span>
               </Button>
-
-              {/* Submit Answer Button */}
               <Button
                 type="button"
                 onClick={() => processAnswerSubmission(currentAnswerText, false)}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold px-5 flex items-center gap-2 shadow-sm"
               >
                 {currentQuestionNum < totalQuestions ? (
-                  <>
-                    <span>Submit & Next</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
+                  <><span>Submit & Next</span><ArrowRight className="w-4 h-4" /></>
                 ) : (
-                  <>
-                    <span>Complete Interview</span>
-                    <Check className="w-4 h-4" />
-                  </>
+                  <><span>Complete Interview</span><Check className="w-4 h-4" /></>
                 )}
               </Button>
             </div>
@@ -729,7 +735,7 @@ export default function MockInterviewPage() {
     );
   }
 
-  // ─── RENDER: 4. INTERVIEW COMPLETED STAGE ──────────────────────────────────
+  // ─── RENDER: 4. COMPLETED STAGE ─────────────────────────────────────────────
   const validScores = evaluationsList.map(e => Number(e.score)).filter(s => !isNaN(s) && s !== null);
   const finalAvgScore = validScores.length
     ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
@@ -741,35 +747,25 @@ export default function MockInterviewPage() {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 mb-1 shadow-sm">
           <Award className="w-8 h-8" />
         </div>
-        <h1 className="font-display font-bold text-2xl sm:text-3xl text-gray-900">
-          Interview Completed!
-        </h1>
-        <p className="text-gray-500 text-sm">
-          Your session data and evaluation scores have been saved to your account.
-        </p>
+        <h1 className="font-display font-bold text-2xl sm:text-3xl text-gray-900">Interview Completed!</h1>
+        <p className="text-gray-500 text-sm">Your session data and evaluation scores have been saved to your account.</p>
       </div>
 
-      {/* Summary Performance Ring Card */}
+      {/* Score Summary Card */}
       <Card className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col items-center text-center space-y-4">
         <ScoreRing score={finalAvgScore} size={130} />
-
         <div className="space-y-1">
           <p className="text-base font-semibold text-gray-900">
-            {finalAvgScore >= 75
-              ? 'Outstanding performance!'
-              : finalAvgScore >= 50
-              ? 'Good effort! Keep practicing to strengthen key concepts.'
-              : 'Keep practicing! Review the actual answers below to improve.'}
+            {finalAvgScore >= 75 ? 'Outstanding performance!' : finalAvgScore >= 50 ? 'Good effort! Keep practicing to strengthen key concepts.' : 'Keep practicing! Review the actual answers below to improve.'}
           </p>
           <p className="text-xs text-gray-500">
-            Role: <strong>{role || 'General'}</strong> • Skill: <strong>{skill}</strong> • {totalQuestions} Questions • Duration: {formatDuration(elapsedSeconds)}
+            Skill: <strong>{skill}</strong> • Difficulty: <strong>{difficulty}</strong> • {totalQuestions} Questions • Duration: {formatDuration(elapsedSeconds)}
           </p>
         </div>
-
         <div className="flex gap-3 pt-2">
           <Button
             variant="outline"
-            onClick={() => setStage('setup')}
+            onClick={() => { stopSpeaking(); setStage('setup'); }}
             className="rounded-xl border-gray-200 text-gray-700 flex items-center gap-2"
           >
             <RotateCcw className="w-4 h-4" />
@@ -785,12 +781,9 @@ export default function MockInterviewPage() {
         </div>
       </Card>
 
-      {/* Q&A Evaluation Breakdown List */}
+      {/* Q&A Breakdown */}
       <div className="space-y-4">
-        <h2 className="font-display font-semibold text-lg text-gray-900">
-          Question & Answer Breakdown
-        </h2>
-
+        <h2 className="font-display font-semibold text-lg text-gray-900">Question & Answer Breakdown</h2>
         {questionsList.map((qText, idx) => {
           const ansText = answersList[idx] || '(No response)';
           const evalObj = evaluationsList[idx] || {};
@@ -806,40 +799,26 @@ export default function MockInterviewPage() {
                   </span>
                   <p className="text-sm font-semibold text-gray-900">{qText}</p>
                 </div>
-                <span
-                  className={cn(
-                    'px-3 py-1 rounded-full text-xs font-bold flex-shrink-0',
-                    score >= 70
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : score >= 40
-                      ? 'bg-amber-100 text-amber-800'
-                      : 'bg-red-100 text-red-800'
-                  )}
-                >
+                <span className={cn(
+                  'px-3 py-1 rounded-full text-xs font-bold flex-shrink-0',
+                  score >= 70 ? 'bg-emerald-100 text-emerald-800' : score >= 40 ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'
+                )}>
                   {score}% {evalObj.verdict ? `(${evalObj.verdict})` : ''}
                 </span>
               </div>
 
-              {/* Candidate Answer */}
               <div className="bg-gray-50 rounded-xl p-3.5 border border-gray-100">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                  Candidate Answer
-                </p>
-                <p className="text-sm text-gray-800 leading-relaxed">
-                  {ansText}
-                </p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Your Answer</p>
+                <p className="text-sm text-gray-800 leading-relaxed">{ansText}</p>
               </div>
 
-              {/* Actual / Model Answer */}
               {actualAnswerText && (
                 <div className="bg-blue-50/70 rounded-xl p-4 border border-blue-200/80 space-y-1.5 text-blue-950">
                   <p className="text-xs font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                    Actual Answer
+                    Model Answer
                   </p>
-                  <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">
-                    {actualAnswerText}
-                  </p>
+                  <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">{actualAnswerText}</p>
                 </div>
               )}
             </Card>

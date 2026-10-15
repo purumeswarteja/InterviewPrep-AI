@@ -116,6 +116,22 @@ export default function HRInterviewPage() {
   const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
 
+  // ─── localStorage helpers for cross-session HR question deduplication ──────
+  const loadAskedHRQuestions = (topicKey) => {
+    try {
+      const stored = localStorage.getItem(`hr_asked_${topicKey}`);
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  };
+
+  const saveAskedHRQuestions = (topicKey, newQuestions) => {
+    try {
+      const existing = loadAskedHRQuestions(topicKey);
+      const merged = [...new Set([...existing, ...newQuestions])].slice(-30);
+      localStorage.setItem(`hr_asked_${topicKey}`, JSON.stringify(merged));
+    } catch { /* ignore storage errors */ }
+  };
+
   // ─── Setup Form State ────────────────────────────────────────────────────────
   const [role, setRole] = useState('');
   const [selectedTopicId, setSelectedTopicId] = useState('introduction');
@@ -255,7 +271,8 @@ export default function HRInterviewPage() {
           totalQuestions: qCount,
           currentQuestion: 1,
           previousQuestions: [],
-          previousAnswers: []
+          previousAnswers: [],
+          allPreviousQuestions: loadAskedHRQuestions(topicObj.id)
         }),
         9000
       );
@@ -371,7 +388,8 @@ export default function HRInterviewPage() {
           totalQuestions: qCount,
           currentQuestion: currentQuestionNum + 1,
           previousQuestions: questionsList,
-          previousAnswers: newAnswers
+          previousAnswers: newAnswers,
+          allPreviousQuestions: loadAskedHRQuestions(topicObj.id)
         }),
         8000
       );
@@ -434,6 +452,9 @@ export default function HRInterviewPage() {
       feedback: finalEvals[idx]?.feedback || 'Evaluation completed.',
       is_followup: followupFlagsList[idx] || false
     }));
+
+    // Save asked questions to localStorage for future session deduplication
+    saveAskedHRQuestions(selectedTopicObj.id, finalQuestions);
 
     if (user) {
       try {
