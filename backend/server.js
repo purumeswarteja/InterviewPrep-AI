@@ -544,13 +544,27 @@ Respond ONLY with valid JSON in this exact structure:
         `How do you implement robust error handling, concurrency, and state management in ${skill}?`,
         `What strategies do you use for profiling, benchmarking, and resolving memory or CPU bottlenecks in ${skill}?`,
         `Describe how you design secure, scalable API endpoints and data validation workflows using ${skill}.`,
-        `How do you approach automated testing (unit, integration, and load testing) in ${skill} applications?`
+        `How do you approach automated testing (unit, integration, and load testing) in ${skill} applications?`,
+        `What are the key trade-offs between different architectural patterns when building systems with ${skill}?`,
+        `How would you handle database design and data consistency challenges in a ${skill} system?`,
+        `Explain how you would implement caching strategies to improve performance in ${skill}.`,
+        `How do you approach security vulnerabilities, authentication, and authorization in ${skill}?`,
+        `Describe how you would implement monitoring, logging, and alerting for a ${skill} system in production.`,
+        `How do you approach scalability challenges — horizontal vs vertical scaling — in ${skill}?`,
+        `What CI/CD pipeline design would you use for deploying ${skill} applications reliably?`
       ];
 
-      // Filter out previously asked
-      const prevSet = new Set((previousQuestions || []).map(q => q.toLowerCase().trim()));
-      const available = skillBank.filter(q => !prevSet.has(q.toLowerCase().trim()));
-      nextQuestionText = available[0] || skillBank[currentQuestion % skillBank.length];
+      // Filter out ALL previously asked questions — current session AND cross-session history
+      const allAskedSet = new Set([
+        ...(allPreviousQuestions || []),
+        ...(previousQuestions || [])
+      ].map(q => q.toLowerCase().trim()));
+
+      const available = skillBank.filter(q => !allAskedSet.has(q.toLowerCase().trim()));
+      // Pick first available; if all used, rotate by index to still vary
+      nextQuestionText = available.length > 0
+        ? available[Math.floor(Math.random() * available.length)]
+        : skillBank[currentQuestion % skillBank.length];
     }
 
     if (!evaluationOfPrevious && lastQ) {
@@ -686,11 +700,20 @@ Respond ONLY with a valid JSON object in this exact format (no markdown formatti
       };
 
       const topicPool = fallbackQuestionsMap[topicId] || fallbackQuestionsMap['introduction'];
-      const prevTexts = (previousQuestions || []).map(q => q.toLowerCase());
-      const unusedPool = topicPool.filter(q => !prevTexts.some(pq => pq.includes(q.slice(0, 20).toLowerCase())));
 
+      // Filter against BOTH current-session and cross-session history
+      const allAskedTexts = [
+        ...(allPreviousQuestions || []),
+        ...(previousQuestions || [])
+      ].map(q => q.toLowerCase());
+
+      const unusedPool = topicPool.filter(q =>
+        !allAskedTexts.some(pq => pq.includes(q.slice(0, 25).toLowerCase()))
+      );
+
+      // Pick randomly from available pool; if all used, cycle by index
       const fallbackQ = unusedPool.length > 0
-        ? unusedPool[0]
+        ? unusedPool[Math.floor(Math.random() * unusedPool.length)]
         : topicPool[(currentQuestion - 1) % topicPool.length];
 
       const lastAns = previousAnswers && previousAnswers.length > 0 ? previousAnswers[previousAnswers.length - 1] : '';
