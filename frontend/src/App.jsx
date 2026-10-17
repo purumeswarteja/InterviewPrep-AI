@@ -9,6 +9,7 @@ import ContactPage from './pages/public/ContactPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import VerifyOtpPage from './pages/auth/VerifyOtpPage';
 import DashboardPage from './pages/app/DashboardPage';
 import AptitudePage from './pages/app/AptitudePage';
 import ReasoningPage from './pages/app/ReasoningPage';
@@ -29,6 +30,7 @@ function PublicApp() {
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-otp" element={<VerifyOtpPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
@@ -50,6 +52,7 @@ function AppRoutes() {
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/login" element={user ? <Navigate to="/app/dashboard" replace /> : <LoginPage />} />
       <Route path="/register" element={user ? <Navigate to="/app/dashboard" replace /> : <RegisterPage />} />
+      <Route path="/verify-otp" element={user ? <Navigate to="/app/dashboard" replace /> : <VerifyOtpPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="/app/dashboard" replace />} />

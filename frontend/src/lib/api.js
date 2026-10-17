@@ -67,6 +67,90 @@ const login = async (email, password) => {
   return data;
 };
 
+const verifyOtp = async (email, otp, password = null) => {
+  const data = await request("/api/auth/verify-otp", {
+    method: "POST",
+    body: JSON.stringify({ email, otp })
+  });
+  if (!data.error && data.token) {
+    setToken(data.token);
+    if (password) {
+      if (data.user?.id) {
+        localStorage.setItem(`user_pw_${data.user.id}`, password);
+      }
+      if (data.user?.email) {
+        localStorage.setItem(`user_pw_${data.user.email.toLowerCase()}`, password);
+      }
+      sessionStorage.setItem('current_user_pw', password);
+    }
+  }
+  return data;
+};
+
+const resendOtp = async (email) => {
+  return request("/api/auth/resend-otp", {
+    method: "POST",
+    body: JSON.stringify({ email })
+  });
+};
+
+const requestEmailChange = async (newEmail) => {
+  return request("/api/auth/change-email/request", {
+    method: "POST",
+    body: JSON.stringify({ newEmail })
+  });
+};
+
+const verifyEmailChange = async (otp) => {
+  const data = await request("/api/auth/change-email/verify", {
+    method: "POST",
+    body: JSON.stringify({ otp })
+  });
+  if (!data.error && data.token) {
+    setToken(data.token);
+  }
+  return data;
+};
+
+const resendEmailChangeOtp = async () => {
+  return request("/api/auth/change-email/resend", {
+    method: "POST"
+  });
+};
+
+const requestPasswordChange = async () => {
+  return request("/api/auth/change-password/request", {
+    method: "POST"
+  });
+};
+
+const verifyPasswordOtp = async (otp) => {
+  return request("/api/auth/change-password/verify-otp", {
+    method: "POST",
+    body: JSON.stringify({ otp })
+  });
+};
+
+const setNewPasswordAfterVerify = async (resetToken, newPassword) => {
+  return request("/api/auth/change-password/set-new", {
+    method: "POST",
+    body: JSON.stringify({ resetToken, newPassword })
+  });
+};
+
+const verifyPasswordChange = async (otp, newPassword) => {
+  return request("/api/auth/change-password/verify", {
+    method: "POST",
+    body: JSON.stringify({ otp, newPassword })
+  });
+};
+
+const resendPasswordChangeOtp = async () => {
+  return request("/api/auth/change-password/resend", {
+    method: "POST"
+  });
+};
+
 const fetchCurrent = async () => {
   return request("/api/auth/me");
 };
@@ -113,7 +197,68 @@ const passwordReset = async (email) => {
   });
 };
 
-const deleteAccount = async () => {
+const forgotPasswordRequest = async (email) => {
+  return request("/api/auth/forgot-password/request", {
+    method: "POST",
+    body: JSON.stringify({ email })
+  });
+};
+
+const forgotPasswordResend = async (email) => {
+  return request("/api/auth/forgot-password/resend", {
+    method: "POST",
+    body: JSON.stringify({ email })
+  });
+};
+
+const forgotPasswordVerifyOtp = async (email, otp) => {
+  return request("/api/auth/forgot-password/verify-otp", {
+    method: "POST",
+    body: JSON.stringify({ email, otp })
+  });
+};
+
+const forgotPasswordReset = async (email, resetToken, newPassword) => {
+  const data = await request("/api/auth/forgot-password/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ email, resetToken, newPassword })
+  });
+  if (!data.error && data.token) {
+    setToken(data.token);
+    if (data.user?.email) {
+      localStorage.setItem(`user_pw_${data.user.email.toLowerCase()}`, newPassword);
+    }
+    if (data.user?.id) {
+      localStorage.setItem(`user_pw_${data.user.id}`, newPassword);
+    }
+    sessionStorage.setItem('current_user_pw', newPassword);
+  }
+  return data;
+};
+
+const requestDeleteAccount = async () => {
+  return request("/api/auth/delete-account/request", {
+    method: "POST"
+  });
+};
+
+const resendDeleteAccountOtp = async () => {
+  return request("/api/auth/delete-account/resend", {
+    method: "POST"
+  });
+};
+
+const confirmDeleteAccount = async (otp) => {
+  return request("/api/auth/delete-account/confirm", {
+    method: "POST",
+    body: JSON.stringify({ otp })
+  });
+};
+
+const deleteAccount = async (otp) => {
+  if (otp) {
+    return confirmDeleteAccount(otp);
+  }
   return request("/api/auth/delete-account", {
     method: "DELETE"
   });
@@ -169,6 +314,16 @@ const generateReasoningQuestions = async (payload) => {
 export const api = {
   signup,
   login,
+  verifyOtp,
+  resendOtp,
+  requestEmailChange,
+  verifyEmailChange,
+  resendEmailChangeOtp,
+  requestPasswordChange,
+  verifyPasswordOtp,
+  setNewPasswordAfterVerify,
+  verifyPasswordChange,
+  resendPasswordChangeOtp,
   fetchCurrent,
   updateProfile,
   getSessions,
@@ -183,6 +338,13 @@ export const api = {
   generateReasoningQuestions,
   getAnalytics,
   passwordReset,
+  forgotPasswordRequest,
+  forgotPasswordResend,
+  forgotPasswordVerifyOtp,
+  forgotPasswordReset,
+  requestDeleteAccount,
+  resendDeleteAccountOtp,
+  confirmDeleteAccount,
   deleteAccount,
   logout,
   getToken,

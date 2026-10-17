@@ -1,16 +1,21 @@
 import 'dotenv/config';
+import dns from 'node:dns';
+dns.setDefaultResultOrder('ipv4first');
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { GoogleGenAI } from '@google/genai';
 
 import User from './models/User.js';
 import Profile from './models/Profile.js';
 import InterviewSession from './models/InterviewSession.js';
 import ResumeAnalysis from './models/ResumeAnalysis.js';
+import { sendOtpEmail } from './utils/mailer.js';
+import { getSkillDifficultyQuestion, getActualAnswerForQuestion } from './utils/mockQuestionBank.js';
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -22,6 +27,20 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 app.use(cors());
 app.use(express.json());
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const generateNumericOtp = () => {
+  return crypto.randomInt(100000, 1000000).toString();
+};
+
+const isValidEmail = (email) => {
+  if (typeof email !== 'string') return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+};
+
+const OTP_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
+const RESEND_COOLDOWN_MS = 60 * 1000; // 60 seconds
+const MAX_OTP_ATTEMPTS = 5;
+
 // ─── DB Connection ───────────────────────────────────────────────────────────
 mongoose
   .connect(MONGODB_URI)
@@ -32,18 +51,33 @@ mongoose
   });
 
 // ─── Auth Middleware ──────────────────────────────────────────────────────────
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: 'Unauthorized. Please sign in.' });
   }
   const token = authHeader.replace('Bearer ', '');
   try {
     const payload = jwt.verify(token, JWT_SECRET);
-    req.user = payload;
+    const user = await User.findOne({ id: payload.userId });
+    if (!user) {
+      return res.status(401).json({ error: 'User account no longer exists.' });
+    }
+    if (user.isEmailVerified === false) {
+      return res.status(403).json({
+        error: 'Email verification required. Please verify your email to access this resource.',
+        requiresVerification: true,
+        email: user.email,
+      });
+    }
+    req.user = {
+      userId: user.id,
+      email: user.email,
+      isEmailVerified: user.isEmailVerified,
+    };
     next();
   } catch {
-    return res.status(401).json({ error: 'Invalid token' });
+    return res.status(401).json({ error: 'Invalid or expired session. Please sign in again.' });
   }
 };
 
@@ -54,28 +88,84 @@ app.post('/api/auth/signup', async (req, res) => {
   try {
     const { email, password, full_name } = req.body;
     if (!email || !password || !full_name) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      return res.status(400).json({ error: 'Missing required fields (full_name, email, password)' });
     }
-    const existing = await User.findOne({ email: email.toLowerCase() });
-    if (existing) {
-      return res.status(400).json({ error: 'Email already registered' });
+
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!isValidEmail(trimmedEmail)) {
+      return res.status(400).json({ error: 'Please enter a valid email address.' });
     }
-    const hashed = await bcrypt.hash(password, 10);
-    const userId = uuidv4();
-    const user = await User.create({
-      id: userId,
-      email: email.toLowerCase(),
-      password: hashed,
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+    }
+    if (!/[A-Z]/.test(password)) {
+      return res.status(400).json({ error: 'Password must contain at least one uppercase letter.' });
+    }
+    if (!/[0-9]/.test(password)) {
+      return res.status(400).json({ error: 'Password must contain at least one number.' });
+    }
+
+    const existingUser = await User.findOne({ email: trimmedEmail });
+    if (existingUser && existingUser.isEmailVerified === true) {
+      return res.status(400).json({ error: 'Email already registered. Please sign in.' });
+    }
+
+    const rawOtp = generateNumericOtp();
+    const hashedOtp = await bcrypt.hash(rawOtp, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    let userId;
+    if (existingUser && existingUser.isEmailVerified !== true) {
+      // Re-use unverified user account and issue fresh credentials & OTP
+      userId = existingUser.id;
+      existingUser.password = hashedPassword;
+      existingUser.otpHash = hashedOtp;
+      existingUser.otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
+      existingUser.otpAttempts = 0;
+      existingUser.otpLastSentAt = new Date();
+      existingUser.isEmailVerified = false;
+      await existingUser.save();
+
+      // Update or create profile
+      await Profile.findOneAndUpdate(
+        { user_id: userId },
+        { full_name: full_name.trim(), updated_at: new Date().toISOString() },
+        { upsert: true, new: true }
+      );
+    } else {
+      // Create new unverified user
+      userId = uuidv4();
+      await User.create({
+        id: userId,
+        email: trimmedEmail,
+        password: hashedPassword,
+        isEmailVerified: false,
+        otpHash: hashedOtp,
+        otpExpiresAt: new Date(Date.now() + OTP_EXPIRY_MS),
+        otpAttempts: 0,
+        otpLastSentAt: new Date(),
+      });
+
+      await Profile.create({
+        id: uuidv4(),
+        user_id: userId,
+        full_name: full_name.trim(),
+      });
+    }
+
+    // Deliver OTP email
+    await sendOtpEmail(trimmedEmail, rawOtp, 'signup');
+
+    return res.status(200).json({
+      success: true,
+      requiresVerification: true,
+      email: trimmedEmail,
+      message: 'Verification code sent to your email. Please verify to activate your account.',
     });
-    await Profile.create({
-      id: uuidv4(),
-      user_id: userId,
-      full_name,
-    });
-    const token = jwt.sign({ userId, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: userId, email: user.email } });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Signup error:', err);
+    res.status(500).json({ error: err.message || 'Server error during signup.' });
   }
 });
 
@@ -83,41 +173,1020 @@ app.post('/api/auth/signup', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) return res.status(400).json({ error: 'Credentials not matched. Please try again.' });
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Please provide both email and password.' });
+    }
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: trimmedEmail });
+    if (!user) {
+      return res.status(400).json({ error: 'Credentials not matched. Please try again.' });
+    }
+
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(400).json({ error: 'Credentials not matched. Please try again.' });
-    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, email: user.email } });
+    if (!valid) {
+      return res.status(400).json({ error: 'Credentials not matched. Please try again.' });
+    }
+
+    // Check email verification status (handles both false and undefined safely)
+    if (user.isEmailVerified !== true) {
+      // Check if current OTP is expired or missing; if so, generate a new one
+      const isExpired = !user.otpExpiresAt || new Date() > new Date(user.otpExpiresAt);
+      const canSend = !user.otpLastSentAt || (Date.now() - new Date(user.otpLastSentAt).getTime() >= RESEND_COOLDOWN_MS);
+
+      if (isExpired && canSend) {
+        const rawOtp = generateNumericOtp();
+        user.otpHash = await bcrypt.hash(rawOtp, 10);
+        user.otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
+        user.otpAttempts = 0;
+        user.otpLastSentAt = new Date();
+        user.isEmailVerified = false;
+        await user.save();
+        await sendOtpEmail(user.email, rawOtp, 'login');
+      }
+
+      return res.status(403).json({
+        error: 'Email not verified. Please verify your email before logging in.',
+        requiresVerification: true,
+        email: user.email,
+        message: 'Your account is pending email verification. A verification code has been dispatched.',
+      });
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, isEmailVerified: true },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      token,
+      user: { id: user.id, email: user.email, isEmailVerified: true },
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Login error:', err);
+    res.status(500).json({ error: err.message || 'Server error during login.' });
+  }
+});
+
+// Verify OTP
+app.post('/api/auth/verify-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ error: 'Email and 6-digit verification code are required.' });
+    }
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const cleanOtp = String(otp).trim();
+
+    if (!/^\d{6}$/.test(cleanOtp)) {
+      return res.status(400).json({ error: 'Verification code must be exactly 6 digits.' });
+    }
+
+    const user = await User.findOne({ email: trimmedEmail });
+    if (!user) {
+      return res.status(404).json({ error: 'User account not found.' });
+    }
+
+    if (user.isEmailVerified === true) {
+      const token = jwt.sign(
+        { userId: user.id, email: user.email, isEmailVerified: true },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+      return res.json({
+        success: true,
+        message: 'Email is already verified.',
+        token,
+        user: { id: user.id, email: user.email, isEmailVerified: true },
+      });
+    }
+
+    if (!user.otpHash || !user.otpExpiresAt) {
+      return res.status(400).json({ error: 'No verification code found. Please request a new code.' });
+    }
+
+    if (new Date() > new Date(user.otpExpiresAt)) {
+      return res.status(400).json({
+        error: 'Verification code has expired. Please request a new code.',
+        expired: true,
+      });
+    }
+
+    if (user.otpAttempts >= MAX_OTP_ATTEMPTS) {
+      return res.status(400).json({
+        error: 'Too many incorrect attempts. Please request a new verification code.',
+        maxAttemptsReached: true,
+      });
+    }
+
+    const isValid = await bcrypt.compare(cleanOtp, user.otpHash);
+    if (!isValid) {
+      user.otpAttempts = (user.otpAttempts || 0) + 1;
+      await user.save();
+      const attemptsLeft = Math.max(0, MAX_OTP_ATTEMPTS - user.otpAttempts);
+      return res.status(400).json({
+        error: attemptsLeft > 0
+          ? `Invalid verification code. ${attemptsLeft} attempt${attemptsLeft === 1 ? '' : 's'} remaining.`
+          : 'Invalid verification code. Maximum attempts reached. Please request a new code.',
+        remainingAttempts: attemptsLeft,
+      });
+    }
+
+    // OTP is valid! Activate account
+    user.isEmailVerified = true;
+    user.otpHash = null;
+    user.otpExpiresAt = null;
+    user.otpAttempts = 0;
+    user.otpLastSentAt = null;
+    await user.save();
+
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, isEmailVerified: true },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      success: true,
+      message: 'Email verified successfully! Welcome aboard.',
+      token,
+      user: { id: user.id, email: user.email, isEmailVerified: true },
+    });
+  } catch (err) {
+    console.error('Verify OTP error:', err);
+    res.status(500).json({ error: err.message || 'Server error during OTP verification.' });
+  }
+});
+
+// Resend OTP
+app.post('/api/auth/resend-otp', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email address is required.' });
+    }
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: trimmedEmail });
+    if (!user) {
+      return res.status(404).json({ error: 'No account found with this email address.' });
+    }
+
+    if (user.isEmailVerified === true) {
+      return res.status(400).json({ error: 'Email is already verified. Please sign in.' });
+    }
+
+    // Check cooldown
+    if (user.otpLastSentAt) {
+      const timeSinceLastSent = Date.now() - new Date(user.otpLastSentAt).getTime();
+      if (timeSinceLastSent < RESEND_COOLDOWN_MS) {
+        const remainingSecs = Math.ceil((RESEND_COOLDOWN_MS - timeSinceLastSent) / 1000);
+        return res.status(429).json({
+          error: `Please wait ${remainingSecs} second${remainingSecs === 1 ? '' : 's'} before requesting a new code.`,
+          secondsRemaining: remainingSecs,
+        });
+      }
+    }
+
+    const rawOtp = generateNumericOtp();
+    user.otpHash = await bcrypt.hash(rawOtp, 10);
+    user.otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
+    user.otpAttempts = 0;
+    user.otpLastSentAt = new Date();
+    await user.save();
+
+    await sendOtpEmail(trimmedEmail, rawOtp, 'signup');
+
+    res.json({
+      success: true,
+      message: 'A new verification code has been sent to your email.',
+    });
+  } catch (err) {
+    console.error('Resend OTP error:', err);
+    res.status(500).json({ error: err.message || 'Server error during resend OTP.' });
+  }
+});
+
+// ─── Change Email Routes ──────────────────────────────────────────────────────
+
+// Request Email Change (Authenticated)
+app.post('/api/auth/change-email/request', authMiddleware, async (req, res) => {
+  try {
+    const { newEmail } = req.body;
+    if (!newEmail) {
+      return res.status(400).json({ error: 'New email address is required.' });
+    }
+
+    const trimmedNewEmail = newEmail.trim().toLowerCase();
+    if (!isValidEmail(trimmedNewEmail)) {
+      return res.status(400).json({ error: 'Please enter a valid email address.' });
+    }
+
+    if (trimmedNewEmail === req.user.email.toLowerCase()) {
+      return res.status(400).json({ error: 'New email cannot be the same as your current email.' });
+    }
+
+    const existingUser = await User.findOne({ email: trimmedNewEmail });
+    if (existingUser) {
+      return res.status(400).json({ error: 'This email is already in use by another account.' });
+    }
+
+    const user = await User.findOne({ id: req.user.userId });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Check cooldown
+    if (user.pendingEmailOtpLastSentAt) {
+      const timeSinceLast = Date.now() - new Date(user.pendingEmailOtpLastSentAt).getTime();
+      if (timeSinceLast < RESEND_COOLDOWN_MS) {
+        const remainingSecs = Math.ceil((RESEND_COOLDOWN_MS - timeSinceLast) / 1000);
+        return res.status(429).json({
+          error: `Please wait ${remainingSecs} second${remainingSecs === 1 ? '' : 's'} before requesting a new code.`,
+          secondsRemaining: remainingSecs,
+        });
+      }
+    }
+
+    const rawOtp = generateNumericOtp();
+    user.pendingEmail = trimmedNewEmail;
+    user.pendingEmailOtpHash = await bcrypt.hash(rawOtp, 10);
+    user.pendingEmailOtpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
+    user.pendingEmailOtpAttempts = 0;
+    user.pendingEmailOtpLastSentAt = new Date();
+    await user.save();
+
+    await sendOtpEmail(trimmedNewEmail, rawOtp, 'change_email');
+
+    res.json({
+      success: true,
+      pendingEmail: trimmedNewEmail,
+      message: `Verification code sent to ${trimmedNewEmail}. Please enter the code to confirm.`,
+    });
+  } catch (err) {
+    console.error('Change email request error:', err);
+    res.status(500).json({ error: err.message || 'Server error during email change request.' });
+  }
+});
+
+// Verify Email Change (Authenticated)
+app.post('/api/auth/change-email/verify', authMiddleware, async (req, res) => {
+  try {
+    const { otp } = req.body;
+    if (!otp) {
+      return res.status(400).json({ error: 'Verification code is required.' });
+    }
+
+    const cleanOtp = String(otp).trim();
+    if (!/^\d{6}$/.test(cleanOtp)) {
+      return res.status(400).json({ error: 'Verification code must be 6 digits.' });
+    }
+
+    const user = await User.findOne({ id: req.user.userId });
+    if (!user || !user.pendingEmail || !user.pendingEmailOtpHash) {
+      return res.status(400).json({ error: 'No pending email change request found.' });
+    }
+
+    if (new Date() > new Date(user.pendingEmailOtpExpiresAt)) {
+      return res.status(400).json({ error: 'Verification code has expired. Please request a new one.' });
+    }
+
+    if (user.pendingEmailOtpAttempts >= MAX_OTP_ATTEMPTS) {
+      return res.status(400).json({ error: 'Too many incorrect attempts. Please request a new code.' });
+    }
+
+    const isValid = await bcrypt.compare(cleanOtp, user.pendingEmailOtpHash);
+    if (!isValid) {
+      user.pendingEmailOtpAttempts = (user.pendingEmailOtpAttempts || 0) + 1;
+      await user.save();
+      const attemptsLeft = Math.max(0, MAX_OTP_ATTEMPTS - user.pendingEmailOtpAttempts);
+      return res.status(400).json({
+        error: attemptsLeft > 0
+          ? `Invalid verification code. ${attemptsLeft} attempt${attemptsLeft === 1 ? '' : 's'} remaining.`
+          : 'Invalid verification code. Please request a new code.',
+      });
+    }
+
+    // Check once more that pending email hasn't been taken in the meantime
+    const conflict = await User.findOne({ email: user.pendingEmail, id: { $ne: user.id } });
+    if (conflict) {
+      return res.status(400).json({ error: 'This email is already in use by another account.' });
+    }
+
+    const newEmail = user.pendingEmail;
+    user.email = newEmail;
+    user.isEmailVerified = true;
+    user.pendingEmail = null;
+    user.pendingEmailOtpHash = null;
+    user.pendingEmailOtpExpiresAt = null;
+    user.pendingEmailOtpAttempts = 0;
+    user.pendingEmailOtpLastSentAt = null;
+    await user.save();
+
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, isEmailVerified: true },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      success: true,
+      message: 'Email address updated successfully!',
+      token,
+      user: { id: user.id, email: user.email, isEmailVerified: true },
+    });
+  } catch (err) {
+    console.error('Change email verify error:', err);
+    res.status(500).json({ error: err.message || 'Server error during email change verification.' });
+  }
+});
+
+// Resend Email Change OTP (Authenticated)
+app.post('/api/auth/change-email/resend', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findOne({ id: req.user.userId });
+    if (!user || !user.pendingEmail) {
+      return res.status(400).json({ error: 'No pending email change request found.' });
+    }
+
+    if (user.pendingEmailOtpLastSentAt) {
+      const timeSinceLast = Date.now() - new Date(user.pendingEmailOtpLastSentAt).getTime();
+      if (timeSinceLast < RESEND_COOLDOWN_MS) {
+        const remainingSecs = Math.ceil((RESEND_COOLDOWN_MS - timeSinceLast) / 1000);
+        return res.status(429).json({
+          error: `Please wait ${remainingSecs} second${remainingSecs === 1 ? '' : 's'} before requesting a new code.`,
+          secondsRemaining: remainingSecs,
+        });
+      }
+    }
+
+    const rawOtp = generateNumericOtp();
+    user.pendingEmailOtpHash = await bcrypt.hash(rawOtp, 10);
+    user.pendingEmailOtpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
+    user.pendingEmailOtpAttempts = 0;
+    user.pendingEmailOtpLastSentAt = new Date();
+    await user.save();
+
+    await sendOtpEmail(user.pendingEmail, rawOtp, 'change_email');
+
+    res.json({
+      success: true,
+      message: `A fresh verification code has been sent to ${user.pendingEmail}.`,
+    });
+  } catch (err) {
+    console.error('Resend email change OTP error:', err);
+    res.status(500).json({ error: err.message || 'Server error during resend.' });
+  }
+});
+
+// ─── Change Password with OTP Routes ──────────────────────────────────────────
+
+// Request Password Change OTP (Authenticated - sends to account email directly)
+app.post('/api/auth/change-password/request', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findOne({ id: req.user.userId });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Enforce 60-second cooldown
+    if (user.passwordResetOtpLastSentAt) {
+      const timeSinceLast = Date.now() - new Date(user.passwordResetOtpLastSentAt).getTime();
+      if (timeSinceLast < RESEND_COOLDOWN_MS) {
+        const remainingSecs = Math.ceil((RESEND_COOLDOWN_MS - timeSinceLast) / 1000);
+        return res.status(429).json({
+          error: `Please wait ${remainingSecs} second${remainingSecs === 1 ? '' : 's'} before requesting a new code.`,
+          secondsRemaining: remainingSecs,
+        });
+      }
+    }
+
+    const rawOtp = generateNumericOtp();
+    user.passwordResetOtpHash = await bcrypt.hash(rawOtp, 10);
+    user.passwordResetOtpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
+    user.passwordResetOtpAttempts = 0;
+    user.passwordResetOtpLastSentAt = new Date();
+    await user.save();
+
+    await sendOtpEmail(user.email, rawOtp, 'change_password');
+
+    res.json({
+      success: true,
+      email: user.email,
+      message: `Verification code sent to your account email (${user.email}).`,
+    });
+  } catch (err) {
+    console.error('Password change request error:', err);
+    res.status(500).json({ error: err.message || 'Failed to send verification code.' });
+  }
+});
+
+// Step 1: Verify Password Change OTP only (Generates temporary reset token)
+app.post('/api/auth/change-password/verify-otp', authMiddleware, async (req, res) => {
+  try {
+    const { otp } = req.body;
+    if (!otp) {
+      return res.status(400).json({ error: 'Verification code is required.' });
+    }
+
+    const cleanOtp = String(otp).trim();
+    if (!/^\d{6}$/.test(cleanOtp)) {
+      return res.status(400).json({ error: 'Verification code must be 6 digits.' });
+    }
+
+    const user = await User.findOne({ id: req.user.userId });
+    if (!user || !user.passwordResetOtpHash) {
+      return res.status(400).json({ error: 'No active password change request found. Please request a new code.' });
+    }
+
+    if (new Date() > new Date(user.passwordResetOtpExpiresAt)) {
+      return res.status(400).json({ error: 'Verification code has expired. Please request a new code.' });
+    }
+
+    if (user.passwordResetOtpAttempts >= MAX_OTP_ATTEMPTS) {
+      return res.status(400).json({ error: 'Too many incorrect attempts. Please request a new code.' });
+    }
+
+    const isValid = await bcrypt.compare(cleanOtp, user.passwordResetOtpHash);
+    if (!isValid) {
+      user.passwordResetOtpAttempts = (user.passwordResetOtpAttempts || 0) + 1;
+      await user.save();
+      const attemptsLeft = Math.max(0, MAX_OTP_ATTEMPTS - user.passwordResetOtpAttempts);
+      return res.status(400).json({
+        error: attemptsLeft > 0
+          ? `Invalid verification code. ${attemptsLeft} attempt${attemptsLeft === 1 ? '' : 's'} remaining.`
+          : 'Invalid verification code. Please request a new code.',
+      });
+    }
+
+    // OTP is valid! Issue secure resetToken for Step 2 and clear OTP
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.passwordResetToken = resetToken;
+    user.passwordResetTokenExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
+    user.passwordResetOtpHash = null;
+    user.passwordResetOtpExpiresAt = null;
+    user.passwordResetOtpAttempts = 0;
+    await user.save();
+
+    res.json({
+      success: true,
+      resetToken,
+      message: 'Code verified successfully! You can now set your new password.',
+    });
+  } catch (err) {
+    console.error('Password change verify-otp error:', err);
+    res.status(500).json({ error: err.message || 'Failed to verify code.' });
+  }
+});
+
+// Step 2: Set New Password after verification (Authenticated with resetToken)
+app.post('/api/auth/change-password/set-new', authMiddleware, async (req, res) => {
+  try {
+    const { resetToken, newPassword } = req.body;
+    if (!resetToken || !newPassword) {
+      return res.status(400).json({ error: 'Reset token and new password are required.' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      return res.status(400).json({ error: 'New password must contain at least one uppercase letter.' });
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      return res.status(400).json({ error: 'New password must contain at least one number.' });
+    }
+
+    const user = await User.findOne({ id: req.user.userId });
+    if (!user || !user.passwordResetToken) {
+      return res.status(400).json({ error: 'No verified password session found. Please request a new code.' });
+    }
+
+    if (new Date() > new Date(user.passwordResetTokenExpiresAt)) {
+      return res.status(400).json({ error: 'Verification session has expired. Please request a new code.' });
+    }
+
+    if (user.passwordResetToken !== resetToken) {
+      return res.status(400).json({ error: 'Invalid reset token. Please request a new code.' });
+    }
+
+    // Update password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.passwordResetToken = null;
+    user.passwordResetTokenExpiresAt = null;
+    user.passwordResetOtpHash = null;
+    user.passwordResetOtpExpiresAt = null;
+    user.passwordResetOtpAttempts = 0;
+    user.passwordResetOtpLastSentAt = null;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully! You can now use your new password.',
+    });
+  } catch (err) {
+    console.error('Password change set-new error:', err);
+    res.status(500).json({ error: err.message || 'Failed to update password.' });
+  }
+});
+
+// Backwards-compatible verify endpoint (supports both { otp, newPassword } and { resetToken, newPassword })
+app.post('/api/auth/change-password/verify', authMiddleware, async (req, res) => {
+  try {
+    const { otp, resetToken, newPassword } = req.body;
+    if (!newPassword || (!otp && !resetToken)) {
+      return res.status(400).json({ error: 'Verification information and new password are required.' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      return res.status(400).json({ error: 'New password must contain at least one uppercase letter.' });
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      return res.status(400).json({ error: 'New password must contain at least one number.' });
+    }
+
+    const user = await User.findOne({ id: req.user.userId });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // If resetToken is supplied
+    if (resetToken) {
+      if (!user.passwordResetToken || user.passwordResetToken !== resetToken) {
+        return res.status(400).json({ error: 'Invalid or expired session. Please request a new code.' });
+      }
+      if (new Date() > new Date(user.passwordResetTokenExpiresAt)) {
+        return res.status(400).json({ error: 'Verification session has expired. Please request a new code.' });
+      }
+    } else {
+      // Direct OTP verification
+      const cleanOtp = String(otp).trim();
+      if (!/^\d{6}$/.test(cleanOtp)) {
+        return res.status(400).json({ error: 'Verification code must be 6 digits.' });
+      }
+      if (!user.passwordResetOtpHash) {
+        return res.status(400).json({ error: 'No active password change request found. Please request a new code.' });
+      }
+      if (new Date() > new Date(user.passwordResetOtpExpiresAt)) {
+        return res.status(400).json({ error: 'Verification code has expired. Please request a new code.' });
+      }
+      if (user.passwordResetOtpAttempts >= MAX_OTP_ATTEMPTS) {
+        return res.status(400).json({ error: 'Too many incorrect attempts. Please request a new code.' });
+      }
+      const isValid = await bcrypt.compare(cleanOtp, user.passwordResetOtpHash);
+      if (!isValid) {
+        user.passwordResetOtpAttempts = (user.passwordResetOtpAttempts || 0) + 1;
+        await user.save();
+        const attemptsLeft = Math.max(0, MAX_OTP_ATTEMPTS - user.passwordResetOtpAttempts);
+        return res.status(400).json({
+          error: attemptsLeft > 0
+            ? `Invalid verification code. ${attemptsLeft} attempt${attemptsLeft === 1 ? '' : 's'} remaining.`
+            : 'Invalid verification code. Please request a new code.',
+        });
+      }
+    }
+
+    // OTP or resetToken is valid! Update password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.passwordResetToken = null;
+    user.passwordResetTokenExpiresAt = null;
+    user.passwordResetOtpHash = null;
+    user.passwordResetOtpExpiresAt = null;
+    user.passwordResetOtpAttempts = 0;
+    user.passwordResetOtpLastSentAt = null;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully! You can now use your new password.',
+    });
+  } catch (err) {
+    console.error('Password change verify error:', err);
+    res.status(500).json({ error: err.message || 'Failed to update password.' });
+  }
+});
+
+// Resend Password Change OTP (Authenticated)
+app.post('/api/auth/change-password/resend', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findOne({ id: req.user.userId });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    if (user.passwordResetOtpLastSentAt) {
+      const timeSinceLast = Date.now() - new Date(user.passwordResetOtpLastSentAt).getTime();
+      if (timeSinceLast < RESEND_COOLDOWN_MS) {
+        const remainingSecs = Math.ceil((RESEND_COOLDOWN_MS - timeSinceLast) / 1000);
+        return res.status(429).json({
+          error: `Please wait ${remainingSecs} second${remainingSecs === 1 ? '' : 's'} before requesting a new code.`,
+          secondsRemaining: remainingSecs,
+        });
+      }
+    }
+
+    const rawOtp = generateNumericOtp();
+    user.passwordResetOtpHash = await bcrypt.hash(rawOtp, 10);
+    user.passwordResetOtpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
+    user.passwordResetOtpAttempts = 0;
+    user.passwordResetOtpLastSentAt = new Date();
+    await user.save();
+
+    await sendOtpEmail(user.email, rawOtp, 'change_password');
+
+    res.json({
+      success: true,
+      message: `A fresh verification code has been sent to your account email (${user.email}).`,
+    });
+  } catch (err) {
+    console.error('Resend password change OTP error:', err);
+    res.status(500).json({ error: err.message || 'Server error during resend.' });
+  }
+});
+
+// ─── Forgot Password with OTP Flow (Unauthenticated) ─────────────────────────
+
+// Step 1: Request Forgot Password OTP
+app.post('/api/auth/forgot-password/request', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({ error: 'Please enter a valid email address.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: cleanEmail });
+    if (!user) {
+      return res.status(404).json({ error: 'No account found with this email address.' });
+    }
+
+    // Enforce 60-second cooldown
+    if (user.passwordResetOtpLastSentAt) {
+      const timeSinceLast = Date.now() - new Date(user.passwordResetOtpLastSentAt).getTime();
+      if (timeSinceLast < RESEND_COOLDOWN_MS) {
+        const remainingSecs = Math.ceil((RESEND_COOLDOWN_MS - timeSinceLast) / 1000);
+        return res.status(429).json({
+          error: `Please wait ${remainingSecs} second${remainingSecs === 1 ? '' : 's'} before requesting a new code.`,
+          secondsRemaining: remainingSecs,
+        });
+      }
+    }
+
+    const rawOtp = generateNumericOtp();
+    user.passwordResetOtpHash = await bcrypt.hash(rawOtp, 10);
+    user.passwordResetOtpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
+    user.passwordResetOtpAttempts = 0;
+    user.passwordResetOtpLastSentAt = new Date();
+    await user.save();
+
+    await sendOtpEmail(cleanEmail, rawOtp, 'change_password');
+
+    res.json({
+      success: true,
+      email: cleanEmail,
+      message: `Verification code sent to ${cleanEmail}.`,
+    });
+  } catch (err) {
+    console.error('Forgot password request error:', err);
+    res.status(500).json({ error: err.message || 'Failed to send verification code.' });
+  }
+});
+
+// Resend Forgot Password OTP
+app.post('/api/auth/forgot-password/resend', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({ error: 'Please enter a valid email address.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: cleanEmail });
+    if (!user) {
+      return res.status(404).json({ error: 'No account found with this email address.' });
+    }
+
+    if (user.passwordResetOtpLastSentAt) {
+      const timeSinceLast = Date.now() - new Date(user.passwordResetOtpLastSentAt).getTime();
+      if (timeSinceLast < RESEND_COOLDOWN_MS) {
+        const remainingSecs = Math.ceil((RESEND_COOLDOWN_MS - timeSinceLast) / 1000);
+        return res.status(429).json({
+          error: `Please wait ${remainingSecs} second${remainingSecs === 1 ? '' : 's'} before requesting a new code.`,
+          secondsRemaining: remainingSecs,
+        });
+      }
+    }
+
+    const rawOtp = generateNumericOtp();
+    user.passwordResetOtpHash = await bcrypt.hash(rawOtp, 10);
+    user.passwordResetOtpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
+    user.passwordResetOtpAttempts = 0;
+    user.passwordResetOtpLastSentAt = new Date();
+    await user.save();
+
+    await sendOtpEmail(cleanEmail, rawOtp, 'change_password');
+
+    res.json({
+      success: true,
+      email: cleanEmail,
+      message: `A fresh verification code has been sent to ${cleanEmail}.`,
+    });
+  } catch (err) {
+    console.error('Forgot password resend error:', err);
+    res.status(500).json({ error: err.message || 'Failed to resend code.' });
+  }
+});
+
+// Step 2: Verify Forgot Password OTP (Generates resetToken)
+app.post('/api/auth/forgot-password/verify-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ error: 'Email and verification code are required.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanOtp = String(otp).trim();
+    if (!/^\d{6}$/.test(cleanOtp)) {
+      return res.status(400).json({ error: 'Verification code must be 6 digits.' });
+    }
+
+    const user = await User.findOne({ email: cleanEmail });
+    if (!user || !user.passwordResetOtpHash) {
+      return res.status(400).json({ error: 'No active password reset request found for this email. Please request a new code.' });
+    }
+
+    if (new Date() > new Date(user.passwordResetOtpExpiresAt)) {
+      return res.status(400).json({ error: 'Verification code has expired. Please request a new code.' });
+    }
+
+    if (user.passwordResetOtpAttempts >= MAX_OTP_ATTEMPTS) {
+      return res.status(400).json({ error: 'Too many incorrect attempts. Please request a new code.' });
+    }
+
+    const isValid = await bcrypt.compare(cleanOtp, user.passwordResetOtpHash);
+    if (!isValid) {
+      user.passwordResetOtpAttempts = (user.passwordResetOtpAttempts || 0) + 1;
+      await user.save();
+      const attemptsLeft = Math.max(0, MAX_OTP_ATTEMPTS - user.passwordResetOtpAttempts);
+      return res.status(400).json({
+        error: attemptsLeft > 0
+          ? `Invalid verification code. ${attemptsLeft} attempt${attemptsLeft === 1 ? '' : 's'} remaining.`
+          : 'Invalid verification code. Please request a new code.',
+      });
+    }
+
+    // OTP is valid! Issue secure resetToken for Step 3 and clear OTP
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.passwordResetToken = resetToken;
+    user.passwordResetTokenExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
+    user.passwordResetOtpHash = null;
+    user.passwordResetOtpExpiresAt = null;
+    user.passwordResetOtpAttempts = 0;
+    await user.save();
+
+    res.json({
+      success: true,
+      resetToken,
+      message: 'Code verified successfully! You can now set your new password.',
+    });
+  } catch (err) {
+    console.error('Forgot password verify-otp error:', err);
+    res.status(500).json({ error: err.message || 'Failed to verify code.' });
+  }
+});
+
+// Step 3: Reset Password with resetToken
+app.post('/api/auth/forgot-password/reset-password', async (req, res) => {
+  try {
+    const { email, resetToken, newPassword } = req.body;
+    if (!email || !resetToken || !newPassword) {
+      return res.status(400).json({ error: 'Email, reset token, and new password are required.' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      return res.status(400).json({ error: 'New password must contain at least one uppercase letter.' });
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      return res.status(400).json({ error: 'New password must contain at least one number.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: cleanEmail });
+    if (!user || !user.passwordResetToken) {
+      return res.status(400).json({ error: 'No active password reset session found. Please request a new code.' });
+    }
+
+    if (new Date() > new Date(user.passwordResetTokenExpiresAt)) {
+      return res.status(400).json({ error: 'Reset session has expired. Please request a new code.' });
+    }
+
+    if (user.passwordResetToken !== resetToken) {
+      return res.status(400).json({ error: 'Invalid reset token. Please request a new code.' });
+    }
+
+    // Set new password
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.isEmailVerified = true;
+    user.passwordResetToken = null;
+    user.passwordResetTokenExpiresAt = null;
+    user.passwordResetOtpHash = null;
+    user.passwordResetOtpExpiresAt = null;
+    user.passwordResetOtpAttempts = 0;
+    user.passwordResetOtpLastSentAt = null;
+    await user.save();
+
+    let profile = await Profile.findOne({ user_id: user.id });
+    if (!profile) {
+      profile = await Profile.create({ user_id: user.id, full_name: '' });
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, isEmailVerified: true },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        isEmailVerified: true,
+      },
+      profile,
+      message: 'Password reset successfully! You are now logged in.',
+    });
+  } catch (err) {
+    console.error('Forgot password reset error:', err);
+    res.status(500).json({ error: err.message || 'Failed to reset password.' });
   }
 });
 
 // Get current user + profile
 app.get('/api/auth/me', authMiddleware, async (req, res) => {
   try {
-    const profile = await Profile.findOne({ user_id: req.user.userId });
-    if (!profile) return res.status(404).json({ error: 'Profile not found' });
-    res.json({ user: { id: req.user.userId, email: req.user.email }, profile });
+    let profile = await Profile.findOne({ user_id: req.user.userId });
+    if (!profile) {
+      profile = await Profile.create({ user_id: req.user.userId });
+    }
+    res.json({
+      user: {
+        id: req.user.userId,
+        email: req.user.email,
+        isEmailVerified: req.user.isEmailVerified,
+      },
+      profile,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Delete account
-app.delete('/api/auth/delete-account', authMiddleware, async (req, res) => {
+// ─── Account Deletion with OTP Verification ───────────────────────────────────
+
+// Request Account Deletion OTP (Authenticated - sends directly to account email)
+app.post('/api/auth/delete-account/request', authMiddleware, async (req, res) => {
   try {
+    const user = await User.findOne({ id: req.user.userId });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    if (user.deleteAccountOtpLastSentAt) {
+      const timeSinceLast = Date.now() - new Date(user.deleteAccountOtpLastSentAt).getTime();
+      if (timeSinceLast < RESEND_COOLDOWN_MS) {
+        const remainingSecs = Math.ceil((RESEND_COOLDOWN_MS - timeSinceLast) / 1000);
+        return res.status(429).json({
+          error: `Please wait ${remainingSecs} second${remainingSecs === 1 ? '' : 's'} before requesting a new code.`,
+          secondsRemaining: remainingSecs,
+        });
+      }
+    }
+
+    const rawOtp = generateNumericOtp();
+    user.deleteAccountOtpHash = await bcrypt.hash(rawOtp, 10);
+    user.deleteAccountOtpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
+    user.deleteAccountOtpAttempts = 0;
+    user.deleteAccountOtpLastSentAt = new Date();
+    await user.save();
+
+    await sendOtpEmail(user.email, rawOtp, 'delete_account');
+
+    res.json({
+      success: true,
+      email: user.email,
+      message: `Verification code sent to your account email (${user.email}).`,
+    });
+  } catch (err) {
+    console.error('Delete account request error:', err);
+    res.status(500).json({ error: err.message || 'Failed to send account deletion code.' });
+  }
+});
+
+// Resend Account Deletion OTP (Authenticated)
+app.post('/api/auth/delete-account/resend', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findOne({ id: req.user.userId });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    if (user.deleteAccountOtpLastSentAt) {
+      const timeSinceLast = Date.now() - new Date(user.deleteAccountOtpLastSentAt).getTime();
+      if (timeSinceLast < RESEND_COOLDOWN_MS) {
+        const remainingSecs = Math.ceil((RESEND_COOLDOWN_MS - timeSinceLast) / 1000);
+        return res.status(429).json({
+          error: `Please wait ${remainingSecs} second${remainingSecs === 1 ? '' : 's'} before requesting a new code.`,
+          secondsRemaining: remainingSecs,
+        });
+      }
+    }
+
+    const rawOtp = generateNumericOtp();
+    user.deleteAccountOtpHash = await bcrypt.hash(rawOtp, 10);
+    user.deleteAccountOtpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
+    user.deleteAccountOtpAttempts = 0;
+    user.deleteAccountOtpLastSentAt = new Date();
+    await user.save();
+
+    await sendOtpEmail(user.email, rawOtp, 'delete_account');
+
+    res.json({
+      success: true,
+      message: 'New deletion code sent to your account email.',
+    });
+  } catch (err) {
+    console.error('Delete account resend error:', err);
+    res.status(500).json({ error: err.message || 'Failed to resend deletion code.' });
+  }
+});
+
+// Confirm Account Deletion with OTP (POST and DELETE supported)
+const handleConfirmAccountDeletion = async (req, res) => {
+  try {
+    const { otp } = req.body;
+    if (!otp) {
+      return res.status(400).json({ error: 'Verification code is required to delete account.' });
+    }
+
+    const cleanOtp = String(otp).trim();
+    if (!/^\d{6}$/.test(cleanOtp)) {
+      return res.status(400).json({ error: 'Verification code must be 6 digits.' });
+    }
+
     const userId = req.user.userId;
+    const user = await User.findOne({ id: userId });
+    if (!user || !user.deleteAccountOtpHash) {
+      return res.status(400).json({ error: 'No active account deletion request found. Please request a new code.' });
+    }
+
+    if (new Date() > new Date(user.deleteAccountOtpExpiresAt)) {
+      return res.status(400).json({ error: 'Verification code has expired. Please request a new code.' });
+    }
+
+    if (user.deleteAccountOtpAttempts >= MAX_OTP_ATTEMPTS) {
+      return res.status(400).json({ error: 'Too many incorrect attempts. Please request a new code.' });
+    }
+
+    const isValid = await bcrypt.compare(cleanOtp, user.deleteAccountOtpHash);
+    if (!isValid) {
+      user.deleteAccountOtpAttempts = (user.deleteAccountOtpAttempts || 0) + 1;
+      await user.save();
+      const attemptsLeft = Math.max(0, MAX_OTP_ATTEMPTS - user.deleteAccountOtpAttempts);
+      return res.status(400).json({
+        error: attemptsLeft > 0
+          ? `Invalid verification code. ${attemptsLeft} attempt${attemptsLeft === 1 ? '' : 's'} remaining.`
+          : 'Invalid verification code. Please request a new code.',
+      });
+    }
+
+    // OTP verified! Permanently delete account and all records
     await User.deleteOne({ id: userId });
     await Profile.deleteOne({ user_id: userId });
     await InterviewSession.deleteMany({ user_id: userId });
     await ResumeAnalysis.deleteMany({ user_id: userId });
-    res.json({ success: true, message: 'Account and all associated data deleted successfully.' });
+
+    res.json({ success: true, message: 'Account and all associated data permanently deleted.' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Delete account confirm error:', err);
+    res.status(500).json({ error: err.message || 'Failed to delete account.' });
   }
-});
+};
+
+app.post('/api/auth/delete-account/confirm', authMiddleware, handleConfirmAccountDeletion);
+app.delete('/api/auth/delete-account', authMiddleware, handleConfirmAccountDeletion);
 
 // ─── Profile Routes ───────────────────────────────────────────────────────────
 
@@ -238,27 +1307,34 @@ function cleanJsonResponse(text) {
 }
 
 async function callGeminiApi(prompt) {
-  const model = 'gemini-flash-latest';
+  const models = ['gemini-flash-lite-latest', 'gemini-3.5-flash-lite', 'gemini-flash-latest'];
   let lastError;
 
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      const response = await ai.models.generateContent({
-        model,
-        contents: prompt,
-      });
-      if (response && response.text) {
-        return response.text;
-      }
-    } catch (err) {
-      console.warn(`Gemini AI attempt ${attempt} failed (${err.message}). Retrying...`);
-      lastError = err;
-      if (attempt < 3) {
-        await new Promise((r) => setTimeout(r, 1200 * attempt));
+  for (const model of models) {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: prompt,
+        });
+        if (response && response.text) {
+          return response.text;
+        }
+      } catch (err) {
+        lastError = err;
+        // If 429 quota or 404 model not found, immediately break to try next model
+        if (err.status === 429 || err.status === 404 || err.message?.includes('quota') || err.message?.includes('429')) {
+          console.warn(`Gemini model ${model} hit ${err.status || 'quota'}, trying next model...`);
+          break;
+        }
+        console.warn(`Gemini AI (${model}) attempt ${attempt} failed (${err.message}). Retrying...`);
+        if (attempt < 2) {
+          await new Promise((r) => setTimeout(r, 1000));
+        }
       }
     }
   }
-  throw lastError || new Error('Gemini AI call failed after retries');
+  throw lastError || new Error('Gemini AI call failed after trying available models');
 }
 
 
@@ -380,14 +1456,14 @@ CRITICAL SCORING & EVALUATION RULES:
 3. If the candidate gives a very brief or superficial answer missing core components (e.g. only 1 incomplete sentence), score MUST BE 20-40.
 4. If the candidate's answer is partially correct covering some basics, score MUST BE 45-70.
 5. If the candidate's answer is accurate, detailed, and technically complete, score MUST BE 75-100.
-6. YOU MUST ALWAYS PROVIDE A DETAILED, FACTUALLY COMPLETE "actual_answer" explaining the ideal answer/solution to the question so the candidate can learn.
+6. CRITICAL REQUIREMENT FOR "actual_answer": You MUST write out the REAL, complete, and factually correct answer/solution to "${question}" (including code snippet, syntax, bullet points, or core definitions). DO NOT give advice on how to answer (e.g. NEVER say "An ideal answer should cover..."). Provide the actual answer itself so the candidate can learn!
 
 Respond ONLY with a valid JSON object in this exact format (no extra markdown outside JSON):
 {
   "score": number (0-100),
   "is_correct": boolean,
   "verdict": "string ('Needs Improvement' if score < 50, 'Partially Correct' if 50-69, 'Good' if 70-84, 'Excellent' if >= 85)",
-  "actual_answer": "string (comprehensive, correct technical answer to the question)",
+  "actual_answer": "string (the full factual answer/solution to the question)",
   "improved_sample_answer": "string (alias to actual_answer)",
   "strengths": ["array of what candidate explained well"],
   "missing_concepts": ["array of missing technical points or edge cases"],
@@ -401,6 +1477,8 @@ Respond ONLY with a valid JSON object in this exact format (no extra markdown ou
     } catch (apiErr) {
       console.warn('Gemini evaluate-interview call failed, calculating fallback:', apiErr.message);
     }
+
+    const curatedActual = getActualAnswerForQuestion(question, topic || category, difficulty);
 
     if (!parsed || parsed.score === undefined) {
       // Heuristic fallback if AI is unavailable
@@ -419,17 +1497,15 @@ Respond ONLY with a valid JSON object in this exact format (no extra markdown ou
         score: calculatedScore,
         is_correct: calculatedScore >= 70,
         verdict,
-        actual_answer: `For "${question}", an ideal answer covers the primary architectural components, execution lifecycle, error recovery mechanisms, and practical scalability considerations in ${topic || 'software engineering'}.`,
-        improved_sample_answer: `For "${question}", an ideal answer covers the primary architectural components, execution lifecycle, error recovery mechanisms, and practical scalability considerations in ${topic || 'software engineering'}.`,
+        actual_answer: curatedActual,
+        improved_sample_answer: curatedActual,
         strengths: words.length > 10 ? ['Attempted explanation'] : [],
-        missing_concepts: ['Detailed technical explanation and architectural breakdown'],
+        missing_concepts: ['Review complete actual answer and key technical concepts above.'],
         feedback_notes: 'Automated evaluation.'
       };
-    }
-
-    // Ensure actual_answer is populated
-    if (!parsed.actual_answer && parsed.improved_sample_answer) {
-      parsed.actual_answer = parsed.improved_sample_answer;
+    } else if (!parsed.actual_answer || parsed.actual_answer.toLowerCase().includes('an ideal answer')) {
+      parsed.actual_answer = curatedActual;
+      parsed.improved_sample_answer = curatedActual;
     }
 
     res.json({ evaluation: parsed });
@@ -453,71 +1529,60 @@ app.post('/api/ai/generate-next-question', async (req, res) => {
       allPreviousQuestions = []   // cross-session history from localStorage
     } = req.body;
 
-    const lastQ = previousQuestions[previousQuestions.length - 1] || '';
+    const lastQ = (previousQuestions[previousQuestions.length - 1] || '').trim();
     const lastA = (previousAnswers[previousAnswers.length - 1] || '').trim();
-
-    // 1. Evaluate the previous answer with strict grading
-    let prevEval = null;
-
-    if (isNonAnswerOrIgnorant(lastA)) {
-      let actualAns = '';
-      try {
-        const modelPrompt = `As a Senior Technical Interviewer in "${skill}", provide the exact, clear, and comprehensive actual answer/solution (3-5 sentences) to this technical interview question:
-"${lastQ}"
-Do not include any conversational filler. State the core concept, key components, and best practice answer directly.`;
-        actualAns = (await callGeminiApi(modelPrompt)) || '';
-      } catch (e) {
-        console.warn('Fallback model answer generation:', e.message);
-      }
-
-      if (!actualAns) {
-        actualAns = `A comprehensive answer for this question on ${skill} requires explaining the core design principles, error handling strategies, performance considerations, and real-world application trade-offs.`;
-      }
-
-      prevEval = {
-        score: 0,
-        verdict: 'Needs Improvement',
-        actual_answer: actualAns.trim(),
-        feedback: actualAns.trim()
-      };
-    }
+    const isFirstQuestion = !lastQ || currentQuestion === 1;
 
     // Merge current session + cross-session history for the forbidden list
     const allAsked = [...new Set([...(allPreviousQuestions || []), ...(previousQuestions || [])])];
 
-    // 2. Prepare Gemini prompt to evaluate previous QA and generate next question
-    const prompt = `You are a Senior Technical Interviewer conducting a mock interview for the role of "${role}" with primary technical focus on "${skill}".
-Difficulty Level: ${difficulty}
-Current Question Number: ${currentQuestion} of ${totalQuestions}
+    // Prepare Gemini prompt to evaluate previous QA (if any) and generate next question tailored to skill and difficulty
+    const prompt = `You are a Senior Technical Interviewer conducting a mock interview for the role of "${role}".
+Target Skill / Technology: "${skill}"
+Difficulty Level: "${difficulty}" (Easy / Medium / Hard)
+Question Number: ${currentQuestion} of ${totalQuestions}
 
-${lastQ ? `PREVIOUS QUESTION: "${lastQ}"
-CANDIDATE ANSWER: "${lastA}"` : ''}
+${!isFirstQuestion ? `PREVIOUS INTERVIEW QUESTION:
+"${lastQ}"
 
-⛔ FORBIDDEN QUESTIONS — NEVER ASK THESE OR ANY VARIATION OF THESE (from current AND previous sessions):
-${allAsked.length > 0 ? allAsked.map((q, i) => `${i + 1}. ${q}`).join('\n') : 'None yet — but still generate a fresh, unique question.'}
+CANDIDATE'S SUBMITTED ANSWER:
+"${lastA || '(Skipped / No response)'}"` : 'This is Question 1. No previous candidate answer to evaluate.'}
 
-INSTRUCTIONS:
-1. ${lastQ ? `Evaluate the candidate's previous answer strictly:
-   - If they wrote "i don't know", "idk", or a trivial/empty answer: score MUST BE 0.
-   - If superficial or missing most key components: score 15-35.
+⛔ FORBIDDEN QUESTIONS — DO NOT ASK THESE OR ANY VARIATIONS (already asked in this or past sessions):
+${allAsked.length > 0 ? allAsked.map((q, i) => `${i + 1}. ${q}`).join('\n') : 'None yet — generate a fresh, unique question.'}
+
+CRITICAL RULES FOR QUESTION GENERATION:
+1. STRICT SKILL RELEVANCE:
+   - The question MUST directly and genuinely test technical knowledge of "${skill}" in a "${role}" context.
+   - For example:
+     * If skill is "HTML": Ask about semantic tags, document flow, form controls, viewport, accessibility, DOM parsing, or attributes. Never ask about backend architecture or database systems.
+     * If skill is "SQL": Ask about SQL queries, joins, window functions, CTEs, indexing, aggregation, or schema design.
+     * If skill is "React": Ask about component state, hooks, Virtual DOM, lifecycle, props, or rendering patterns.
+     * If skill is "Python": Ask about Python data structures, generators, list comprehensions, decorators, memory, or typing.
+2. STRICT DIFFICULTY CALIBRATION FOR "${difficulty}":
+   - "Easy": Focus on fundamentals, core syntax, common built-in methods, primary concepts, standard tags/keywords, and beginner-friendly practical usage. Questions must be accessible and straightforward.
+   - "Medium": Focus on real-world practical scenarios, problem-solving, query writing, debugging, edge cases, error handling, performance considerations, and tool integration suited to a ${role}.
+   - "Hard": Focus on internal engine mechanics, low-level architecture, query execution plans, concurrency/race conditions, distributed scale bottlenecks, memory leaks, and complex design trade-offs.
+3. BAN ON GENERIC BOILERPLATE:
+   - NEVER use generic fill-in-the-blank templates such as "Explain the core architecture and key components of [skill]" or "How does [skill] interact in a production [role] environment".
+   - Phrase the question naturally and technically, exactly as a top-tier senior tech lead would ask in an interview.
+4. ${!isFirstQuestion ? `PREVIOUS ANSWER EVALUATION:
+   - If candidate said "i don't know", "idk", or gave a blank/evasive answer: score MUST be 0.
+   - If superficial or missing core concepts: score 15-35.
    - If partially correct: score 45-70.
-   - If complete and accurate: score 75-100.
-   - Provide a comprehensive, accurate "actual_answer" explaining the correct technical solution.` : ''}
-2. Generate the NEXT unique technical question strictly focused on "${skill}" (context: ${role}).
-   - MUST be completely different from every question in the FORBIDDEN list above.
-   - Test a DIFFERENT sub-topic, concept, or real-world scenario of ${skill} each time.
-   - Vary the angle: scenario-based, trade-off analysis, debugging, architecture, security, scaling, testing, best practices — rotate through these.
+   - If complete, clear, and technically accurate: score 75-100.
+    - CRITICAL REQUIREMENT FOR "actual_answer": Write out the REAL, complete, and factually correct technical answer/solution to "${lastQ}" (including definitions, code syntax, or bullet points). DO NOT provide advice on how to answer (e.g. NEVER write "an ideal answer covers..."). Provide the actual answer itself so the candidate learns the exact technical answer!` : ''}
 
 Respond ONLY with valid JSON in this exact structure:
 {
   "question": "string (the new technical question to ask the candidate)",
   "focus_concept": "string (specific technical concept tested)",
-  "evaluation_of_previous": {
+  ${!isFirstQuestion ? `"evaluation_of_previous": {
     "score": number (0-100),
     "verdict": "string ('Needs Improvement', 'Partially Correct', 'Good', or 'Excellent')",
-    "actual_answer": "string (comprehensive, correct technical answer to the previous question)",
-    "feedback": "string (alias to actual_answer)"
-  }
+    "actual_answer": "string (the full factual answer/solution to the previous question)",
+    "feedback": "string (constructive feedback on candidate response)"
+  }` : ''}
 }`;
 
     let parsed = null;
@@ -525,67 +1590,49 @@ Respond ONLY with valid JSON in this exact structure:
       const rawText = await callGeminiApi(prompt);
       parsed = cleanJsonResponse(rawText);
     } catch (apiErr) {
-      console.warn('Gemini generate-next-question failed, using fallback:', apiErr.message);
+      console.warn('Gemini generate-next-question failed, using skill-aware fallback:', apiErr.message);
     }
 
     let nextQuestionText = parsed?.question;
-    let focusConcept = parsed?.focus_concept || skill;
+    let focusConcept = parsed?.focus_concept || `${skill} (${difficulty})`;
     let evaluationOfPrevious = parsed?.evaluation_of_previous;
 
-    // If candidate had a non-answer, override evaluation score to 0 regardless
-    if (isNonAnswerOrIgnorant(lastA) && prevEval) {
-      evaluationOfPrevious = prevEval;
-    }
-
-    // Fallback question generation if AI was unavailable
+    // Fallback question generation if AI was unavailable or timed out
     if (!nextQuestionText) {
-      const skillBank = [
-        `How do you design and structure high-throughput, low-latency architectures in ${skill}?`,
-        `How do you implement robust error handling, concurrency, and state management in ${skill}?`,
-        `What strategies do you use for profiling, benchmarking, and resolving memory or CPU bottlenecks in ${skill}?`,
-        `Describe how you design secure, scalable API endpoints and data validation workflows using ${skill}.`,
-        `How do you approach automated testing (unit, integration, and load testing) in ${skill} applications?`,
-        `What are the key trade-offs between different architectural patterns when building systems with ${skill}?`,
-        `How would you handle database design and data consistency challenges in a ${skill} system?`,
-        `Explain how you would implement caching strategies to improve performance in ${skill}.`,
-        `How do you approach security vulnerabilities, authentication, and authorization in ${skill}?`,
-        `Describe how you would implement monitoring, logging, and alerting for a ${skill} system in production.`,
-        `How do you approach scalability challenges — horizontal vs vertical scaling — in ${skill}?`,
-        `What CI/CD pipeline design would you use for deploying ${skill} applications reliably?`
-      ];
-
-      // Filter out ALL previously asked questions — current session AND cross-session history
-      const allAskedSet = new Set([
-        ...(allPreviousQuestions || []),
-        ...(previousQuestions || [])
-      ].map(q => q.toLowerCase().trim()));
-
-      const available = skillBank.filter(q => !allAskedSet.has(q.toLowerCase().trim()));
-      // Pick first available; if all used, rotate by index to still vary
-      nextQuestionText = available.length > 0
-        ? available[Math.floor(Math.random() * available.length)]
-        : skillBank[currentQuestion % skillBank.length];
+      nextQuestionText = getSkillDifficultyQuestion(skill, role, difficulty, allAsked, currentQuestion - 1);
     }
 
-    if (!evaluationOfPrevious && lastQ) {
-      const words = lastA.split(/\s+/).filter(Boolean);
+    if (!isFirstQuestion) {
       const isZero = isNonAnswerOrIgnorant(lastA);
-      const score = isZero ? 0 : (words.length > 20 ? 60 : 25);
-      const verdict = score >= 70 ? 'Good' : (score >= 45 ? 'Partially Correct' : 'Needs Improvement');
+      const curatedAns = getActualAnswerForQuestion(lastQ, skill, difficulty, role);
+      const aiActual = evaluationOfPrevious?.actual_answer;
+      const hasRealActual = aiActual && !aiActual.toLowerCase().includes('an ideal answer') && !aiActual.toLowerCase().includes('ideal technical answer');
 
-      evaluationOfPrevious = {
-        score,
-        verdict,
-        actual_answer: `For "${lastQ}", an ideal technical answer explains the core mechanism, component lifecycle, real-world failure modes, and optimization techniques in ${skill}.`,
-        feedback: `For "${lastQ}", an ideal technical answer explains the core mechanism, component lifecycle, real-world failure modes, and optimization techniques in ${skill}.`
-      };
+      if (isZero) {
+        evaluationOfPrevious = {
+          score: 0,
+          verdict: 'Needs Improvement',
+          actual_answer: hasRealActual ? aiActual : curatedAns,
+          feedback: 'Question was skipped or answered without substantive technical content.'
+        };
+      } else if (!evaluationOfPrevious || !hasRealActual) {
+        const words = lastA.split(/\s+/).filter(Boolean);
+        const score = evaluationOfPrevious?.score ?? (words.length >= 25 ? 65 : (words.length >= 10 ? 40 : 20));
+        const verdict = evaluationOfPrevious?.verdict ?? (score >= 70 ? 'Good' : (score >= 45 ? 'Partially Correct' : 'Needs Improvement'));
+        evaluationOfPrevious = {
+          score,
+          verdict,
+          actual_answer: hasRealActual ? aiActual : curatedAns,
+          feedback: evaluationOfPrevious?.feedback || curatedAns
+        };
+      }
     }
 
     res.json({
       result: {
         question: nextQuestionText,
         focus_concept: focusConcept,
-        evaluation_of_previous: evaluationOfPrevious
+        evaluation_of_previous: evaluationOfPrevious || null
       }
     });
   } catch (err) {
@@ -1213,6 +2260,24 @@ app.post('/api/password-reset', async (req, res) => {
 
 // ─── Start Server ─────────────────────────────────────────────────────────────
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`🚀 Express backend running on http://localhost:${port}`);
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${port} is already in use by another running process.`);
+    console.error(`💡 Tip: Run 'npx kill-port ${port}' or stop the other process and restart.`);
+  } else {
+    console.error('❌ Server listener error:', err.message);
+  }
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('⚠️ Unhandled Promise Rejection:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err);
 });

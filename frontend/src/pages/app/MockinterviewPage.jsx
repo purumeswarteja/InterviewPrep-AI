@@ -12,37 +12,7 @@ import { Card, Button, Badge, ScoreRing, ProgressBar } from '../../components/ui
 import { cn, formatDuration } from '../../lib/utils';
 import { useSpeechRecognition } from '../../lib/useSpeechRecognition';
 import { speakText, stopSpeaking } from '../../lib/speech';
-
-// Large pool of fallback questions per skill type to avoid repetition
-const FALLBACK_QUESTION_POOLS = {
-  default: [
-    (s, r) => `Explain the core architecture and key components of ${s}. How do they interact in a production ${r} environment?`,
-    (s, r) => `What are common performance bottlenecks in ${s}, and how would you diagnose and resolve them as a ${r}?`,
-    (s, r) => `How do you implement robust error handling and fault tolerance in ${s}?`,
-    (s, r) => `Describe testing strategies (unit, integration, end-to-end) you use for ${s} applications.`,
-    (s, r) => `How do you handle security vulnerabilities and authentication in ${s}?`,
-    (s, r) => `Walk me through how you would design a scalable, high-availability system using ${s}.`,
-    (s, r) => `What are the trade-offs between different design patterns when building with ${s}?`,
-    (s, r) => `How do you manage state, concurrency, or asynchronous operations in ${s}?`,
-    (s, r) => `Describe a real-world debugging scenario in ${s} and how you resolved it.`,
-    (s, r) => `How do you ensure code maintainability and reduce technical debt in ${s} projects?`,
-    (s, r) => `Explain CI/CD integration and deployment strategies for ${s} applications.`,
-    (s, r) => `How do you approach monitoring, alerting, and observability in ${s}?`,
-  ]
-};
-
-function getFallbackQuestion(skill, role, usedQuestions, index) {
-  const pool = FALLBACK_QUESTION_POOLS.default;
-  const usedSet = new Set((usedQuestions || []).map(q => q.toLowerCase().slice(0, 40)));
-  const available = pool.filter((fn) => {
-    const q = fn(skill, role).toLowerCase().slice(0, 40);
-    return !usedSet.has(q);
-  });
-  if (available.length > 0) {
-    return available[index % available.length](skill, role);
-  }
-  return pool[index % pool.length](skill, role);
-}
+import { getFallbackQuestion, getActualAnswerForQuestion } from '../../lib/mockQuestionBank';
 
 export default function MockInterviewPage() {
   const { user, refreshProfile } = useAuth();
@@ -185,7 +155,7 @@ export default function MockInterviewPage() {
     resetSpeech();
 
     setStage('loading');
-    setLoadingMsg(`AI Interviewer is preparing Question 1 for ${skill}...`);
+    setLoadingMsg(`AI is preparing a ${difficulty}-level question on ${skill.trim()}...`);
 
     // Load cross-session history for this skill
     const crossSessionHistory = loadAskedQuestions(skill.trim());
@@ -204,12 +174,12 @@ export default function MockInterviewPage() {
           previousAnswers: [],
           allPreviousQuestions: crossSessionHistory
         }),
-        9000
+        35000
       );
 
       if (res && res.result && res.result.question) {
         setCurrentQuestionText(res.result.question);
-        setCurrentFocusConcept(res.result.focus_concept || skill.trim());
+        setCurrentFocusConcept(res.result.focus_concept || `${skill.trim()} (${difficulty})`);
         setQuestionsList([res.result.question]);
         questionSuccess = true;
       }
@@ -218,14 +188,14 @@ export default function MockInterviewPage() {
     }
 
     if (!questionSuccess) {
-      const fallbackQ = getFallbackQuestion(skill.trim(), role.trim(), [], 0);
+      const fallbackQ = getFallbackQuestion(skill.trim(), role.trim(), difficulty, [], 0);
       setCurrentQuestionText(fallbackQ);
-      setCurrentFocusConcept(`${skill.trim()} Fundamentals`);
+      setCurrentFocusConcept(`${skill.trim()} (${difficulty})`);
       setQuestionsList([fallbackQ]);
     }
 
     setStage('interview');
-    toast.success(`Mock Interview Started! Focus: ${skill.trim()}`);
+    toast.success(`Mock Interview Started! Focus: ${skill.trim()} (${difficulty})`);
   };
 
   // Helper to detect non-answers
@@ -263,22 +233,25 @@ export default function MockInterviewPage() {
       setStage('loading');
       setLoadingMsg('AI is calculating final interview evaluations...');
 
+      const fallbackActual = getActualAnswerForQuestion(currentQuestionText, skill.trim(), difficulty, role.trim());
       let finalEval = {
         score: candidateIsNonAnswer ? 0 : 35,
         verdict: candidateIsNonAnswer ? 'Needs Improvement' : 'Evaluated',
-        actual_answer: `For "${currentQuestionText}", an ideal answer covers the core principles, architecture patterns, error handling, and production trade-offs in ${skill.trim()}.`
+        actual_answer: fallbackActual
       };
 
       try {
         const evalRes = await fetchWithTimeout(
           api.evaluateInterviewWithAI({ question: currentQuestionText, answer: finalAnswer, topic: skill, difficulty }),
-          12000
+          35000
         );
         if (evalRes?.evaluation) {
+          const evalActual = evalRes.evaluation.actual_answer || evalRes.evaluation.improved_sample_answer;
+          const hasReal = evalActual && !evalActual.toLowerCase().includes('an ideal answer');
           finalEval = {
             score: candidateIsNonAnswer ? 0 : (evalRes.evaluation.score ?? 0),
             verdict: candidateIsNonAnswer ? 'Needs Improvement' : (evalRes.evaluation.verdict || 'Evaluated'),
-            actual_answer: evalRes.evaluation.actual_answer || evalRes.evaluation.improved_sample_answer || finalEval.actual_answer
+            actual_answer: hasReal ? evalActual : fallbackActual
           };
         }
       } catch (err) { console.warn('Final question evaluation timeout fallback:', err.message); }
@@ -290,14 +263,15 @@ export default function MockInterviewPage() {
     }
 
     setStage('loading');
-    setLoadingMsg(`AI is evaluating your answer and preparing Question ${currentQuestionNum + 1}...`);
+    setLoadingMsg(`AI is evaluating your answer and preparing Question ${currentQuestionNum + 1} on ${skill.trim()} (${difficulty})...`);
 
     let nextQText = '';
-    let nextFocus = skill.trim();
+    let nextFocus = `${skill.trim()} (${difficulty})`;
+    const fallbackActual = getActualAnswerForQuestion(currentQuestionText, skill.trim(), difficulty, role.trim());
     let prevEval = {
       score: candidateIsNonAnswer ? 0 : 35,
       verdict: candidateIsNonAnswer ? 'Needs Improvement' : 'Evaluated',
-      actual_answer: `For "${currentQuestionText}", an ideal answer covers the core principles, architecture, error handling, and optimization techniques in ${skill.trim()}.`
+      actual_answer: fallbackActual
     };
 
     try {
@@ -312,25 +286,27 @@ export default function MockInterviewPage() {
           previousAnswers: newAnswers,
           allPreviousQuestions: loadAskedQuestions(skill.trim())
         }),
-        12000
+        35000
       );
 
       if (res && res.result && res.result.question) {
         nextQText = res.result.question;
-        nextFocus = res.result.focus_concept || skill.trim();
+        nextFocus = res.result.focus_concept || `${skill.trim()} (${difficulty})`;
         if (res.result.evaluation_of_previous) {
           const evalPrev = res.result.evaluation_of_previous;
+          const evalActual = evalPrev.actual_answer || evalPrev.feedback;
+          const hasReal = evalActual && !evalActual.toLowerCase().includes('an ideal answer');
           prevEval = {
             score: candidateIsNonAnswer ? 0 : (evalPrev.score ?? 0),
             verdict: candidateIsNonAnswer ? 'Needs Improvement' : (evalPrev.verdict || 'Evaluated'),
-            actual_answer: evalPrev.actual_answer || evalPrev.feedback || prevEval.actual_answer
+            actual_answer: hasReal ? evalActual : fallbackActual
           };
         }
       }
     } catch (err) { console.warn('Next question fetch timeout/error, using fallback:', err.message); }
 
     if (!nextQText) {
-      nextQText = getFallbackQuestion(skill.trim(), role.trim(), questionsList, currentQuestionNum);
+      nextQText = getFallbackQuestion(skill.trim(), role.trim(), difficulty, questionsList, currentQuestionNum);
     }
 
     const newEvals = [...evaluationsList, prevEval];
@@ -816,7 +792,7 @@ export default function MockInterviewPage() {
                 <div className="bg-blue-50/70 rounded-xl p-4 border border-blue-200/80 space-y-1.5 text-blue-950">
                   <p className="text-xs font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                    Model Answer
+                    Actual Answer / Solution
                   </p>
                   <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">{actualAnswerText}</p>
                 </div>

@@ -18,8 +18,15 @@ const profileSchema = new mongoose.Schema({
   streak_count: { type: Number, default: 0 },
   longest_streak: { type: Number, default: 0 },
   last_active_date: { type: String, default: null },
-  weekly_goal: { type: Number, default: 5 },
-  monthly_goal: { type: Number, default: 20 },
+  weekly_goal: { type: Number, default: 0 },
+  notifications: {
+    type: Object,
+    default: () => ({
+      practice_reminders: true,
+      achievements: true,
+      tips: true,
+    }),
+  },
   total_interviews: { type: Number, default: 0 },
   avg_score: { type: Number, default: 0 },
   created_at: { type: String, default: () => new Date().toISOString() },
