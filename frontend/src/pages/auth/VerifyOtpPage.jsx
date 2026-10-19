@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Brain, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Brain, CheckCircle2 } from 'lucide-react';
 import OtpVerification from '../../components/auth/OtpVerification';
 
 export default function VerifyOtpPage() {
@@ -29,7 +29,7 @@ export default function VerifyOtpPage() {
           </div>
           <div className="relative z-10 space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-semibold backdrop-blur-md">
-              <Sparkles className="w-3.5 h-3.5" />
+              <CheckCircle2 className="w-3.5 h-3.5" />
               <span>Email Verification</span>
             </div>
             <h2 className="text-3xl font-bold text-white leading-tight">

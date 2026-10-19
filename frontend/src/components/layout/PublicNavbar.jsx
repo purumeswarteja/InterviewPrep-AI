@@ -1,7 +1,7 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { Brain, Menu, X, Sparkles } from "lucide-react";
+import { Brain, Menu, X, ArrowRight } from "lucide-react";
 import { cn } from "../../lib/utils";
 const links = [
   { to: "/", label: "Home" },
@@ -35,7 +35,7 @@ function PublicNavbar() {
             to: "/register",
             className: "px-4 py-2 rounded-lg text-sm font-semibold bg-ink-900 text-white hover:bg-ink-800 transition-colors flex items-center gap-1.5",
             children: [
-              /* @__PURE__ */ jsx(Sparkles, { className: "w-4 h-4" }),
+              /* @__PURE__ */ jsx(ArrowRight, { className: "w-4 h-4" }),
               "Get Started"
             ]
           }

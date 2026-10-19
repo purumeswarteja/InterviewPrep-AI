@@ -6,7 +6,6 @@ import {
   FileText,
   BarChart3,
   ArrowRight,
-  Sparkles,
   Zap
 } from "lucide-react";
 import PublicNavbar from "../../components/layout/PublicNavbar";
@@ -45,7 +44,7 @@ function LandingPage() {
       /* @__PURE__ */ jsx("div", { className: "absolute inset-0 grid-pattern opacity-20" }),
       /* @__PURE__ */ jsx("div", { className: "relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full", children: /* @__PURE__ */ jsxs("div", { className: "max-w-2xl animate-fade-up", children: [
         /* @__PURE__ */ jsxs("div", { className: "inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm text-brand-300 text-sm font-medium mb-6 border border-white/10", children: [
-          /* @__PURE__ */ jsx(Sparkles, { className: "w-4 h-4" }),
+          /* @__PURE__ */ jsx(Zap, { className: "w-4 h-4" }),
           "AI-Powered Interview Coaching"
         ] }),
         /* @__PURE__ */ jsxs("h1", { className: "font-display font-bold text-4xl sm:text-5xl lg:text-6xl text-white leading-[1.1] tracking-tight", children: [

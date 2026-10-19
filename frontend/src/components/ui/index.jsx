@@ -36,7 +36,8 @@ function Button({
 function Card({
   children,
   className,
-  hover = false
+  hover = false,
+  ...props
 }) {
   return /* @__PURE__ */ jsx(
     "div",
@@ -46,6 +47,7 @@ function Card({
         hover && "hover:shadow-lift hover:border-ink-300 transition-all duration-300 cursor-pointer",
         className
       ),
+      ...props,
       children
     }
   );

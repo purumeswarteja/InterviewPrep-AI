@@ -201,34 +201,6 @@ function AnalyticsPage() {
               color: "brand"
             }
           )
-        ] }),
-        /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between mb-2", children: [
-            /* @__PURE__ */ jsx("span", { className: "text-sm font-medium text-ink-700", children: "Monthly Goal" }),
-            /* @__PURE__ */ jsxs("span", { className: "text-sm text-ink-500", children: [
-              sessions.filter((s) => {
-                const d = new Date(s.created_at);
-                const m = /* @__PURE__ */ new Date();
-                m.setDate(m.getDate() - 30);
-                return d > m;
-              }).length,
-              " / ",
-              profile?.monthly_goal || 20
-            ] })
-          ] }),
-          /* @__PURE__ */ jsx(
-            ProgressBar,
-            {
-              value: sessions.filter((s) => {
-                const d = new Date(s.created_at);
-                const m = /* @__PURE__ */ new Date();
-                m.setDate(m.getDate() - 30);
-                return d > m;
-              }).length,
-              max: profile?.monthly_goal || 20,
-              color: "sky"
-            }
-          )
         ] })
       ] })
     ] })

@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  FileText, Upload, Check, AlertCircle, Sparkles, Loader2,
+  FileText, Upload, Check, AlertCircle, Zap, Loader2,
   FileCheck, Lightbulb, XCircle, ThumbsUp, X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -331,7 +331,7 @@ export default function ResumeAnalyzerPage() {
             </>
           ) : (
             <>
-              <Sparkles className="w-5 h-5" />
+              <Zap className="w-5 h-5" />
               <span>Analyze Resume</span>
             </>
           )}
@@ -357,7 +357,7 @@ export default function ResumeAnalyzerPage() {
             <Card className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col items-center text-center">
               {result.detected_domain && (
                 <div className="mb-3 px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full border border-emerald-200 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Zap className="w-3.5 h-3.5" />
                   <span>AI Detected Domain: {result.detected_domain}</span>
                 </div>
               )}

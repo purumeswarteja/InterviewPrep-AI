@@ -18,7 +18,10 @@ const profileSchema = new mongoose.Schema({
   streak_count: { type: Number, default: 0 },
   longest_streak: { type: Number, default: 0 },
   last_active_date: { type: String, default: null },
+  last_weekly_goal_email_sent_week: { type: String, default: null },
+  last_daily_reminder_date: { type: String, default: null },
   weekly_goal: { type: Number, default: 0 },
+  theme: { type: String, enum: ['light', 'dark'], default: 'light' },
   notifications: {
     type: Object,
     default: () => ({

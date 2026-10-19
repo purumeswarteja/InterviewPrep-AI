@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Calculator, Puzzle, Brain, Mic, FileText, TrendingUp, Flame, Target, Award,
-  ArrowRight, Clock, Play, Zap, ChevronRight, Star, X
+  Calculator, Puzzle, Brain, Mic, FileText, TrendingUp, Flame, Target,
+  ArrowRight, Clock, Play, ChevronRight, Star, X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/api';
 import { ScoreRing, EmptyState } from '../../components/ui';
-import { timeAgo, formatDuration } from '../../lib/utils';
-import { dailyChallengeQuestions } from '../../data/questions';
+import { cn, timeAgo, formatDuration } from '../../lib/utils';
 
 const quickActions = [
   {
@@ -72,16 +71,55 @@ function StatCard({ icon: Icon, value, label, bg, iconBg, iconColor, textColor }
   );
 }
 
+function getSessionSummary(session) {
+  if (!session) return null;
+
+  const questionsList = session.questions || [];
+  const score = session.score !== null ? Math.round(session.score) : null;
+  const topic = session.skill || session.topic || 'Interview';
+  const role = session.role ? ` for ${session.role}` : '';
+
+  let verdict = 'Completed';
+  let verdictColor = 'bg-gray-100 text-gray-800';
+
+  if (score !== null) {
+    if (score >= 80) {
+      verdict = 'Outstanding Performance';
+      verdictColor = 'bg-emerald-100 text-emerald-800';
+    } else if (score >= 60) {
+      verdict = 'Proficient Performance';
+      verdictColor = 'bg-amber-100 text-amber-800';
+    } else {
+      verdict = 'Needs Review';
+      verdictColor = 'bg-rose-100 text-rose-800';
+    }
+  }
+
+  let text = '';
+  if (session.feedback && typeof session.feedback === 'object' && session.feedback.summary && !session.feedback.summary.startsWith('Interview completed') && !session.feedback.summary.endsWith('completed')) {
+    text = session.feedback.summary;
+  } else if (score !== null) {
+    if (score >= 80) {
+      text = `Outstanding performance in ${topic}${role}. Clear understanding of core concepts with well-structured answers across ${questionsList.length || 'all'} questions.`;
+    } else if (score >= 60) {
+      text = `Good performance in ${topic}${role}. Solid foundational knowledge shown; adding more practical examples and covering edge cases will help push your score higher.`;
+    } else {
+      text = `Practice completed for ${topic}${role}. Review the key concepts and recommended answers below to strengthen your fundamentals for subsequent rounds.`;
+    }
+  } else {
+    text = `Completed practice session for ${topic}${role} with ${questionsList.length || 0} questions answered.`;
+  }
+
+  return { text, verdict, verdictColor };
+}
+
 export default function DashboardPage() {
   const { user, profile } = useAuth();
   const [sessions, setSessions] = useState([]);
-  const [todayQuestion, setTodayQuestion] = useState(dailyChallengeQuestions[0]);
   const [loading, setLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState(null);
 
   useEffect(() => {
-    const dayIdx = new Date().getDate() % dailyChallengeQuestions.length;
-    setTodayQuestion(dailyChallengeQuestions[dayIdx]);
     if (user) {
       api.getSessions().then((response) => {
         if (!response.error) setSessions(response.sessions || []);
@@ -198,8 +236,8 @@ export default function DashboardPage() {
         />
         <StatCard
           icon={Flame}
-          value={bestStreak}
-          label="Best Streak"
+          value={profile?.streak_count || 0}
+          label="Streak"
           bg="linear-gradient(135deg, #fff1f2, #ffe4e6)"
           iconBg="rgba(239,68,68,0.15)"
           iconColor="#dc2626"
@@ -235,11 +273,11 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Bottom Grid: Recent Sessions + Sidebar ── */}
-      <div className="grid lg:grid-cols-3 gap-6">
+      {/* ── Bottom Grid: Recent Sessions + Performance ── */}
+      <div className={cn("grid gap-6", profile && profile.avg_score > 0 ? "lg:grid-cols-3" : "grid-cols-1")}>
 
         {/* Recent Sessions */}
-        <div className="lg:col-span-2">
+        <div className={profile && profile.avg_score > 0 ? "lg:col-span-2" : "col-span-1"}>
           <div className="card-surface p-6">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-bold text-lg" style={{ color: '#0c0f1a', fontFamily: 'Space Grotesk, Inter, sans-serif' }}>
@@ -276,18 +314,20 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 {sessions.slice(0, 6).map((s) => {
                   const typeColors = {
-                    mock: { bg: '#eefcf5', icon: '#0c8f63' },
-                    hr: { bg: '#eff9ff', icon: '#0084d1' },
-                    voice: { bg: '#fff8ed', icon: '#c74a08' },
+                    mock: { bg: '#eefcf5', icon: '#0c8f63', Icon: Brain },
+                    hr: { bg: '#eff9ff', icon: '#0084d1', Icon: Mic },
+                    aptitude: { bg: '#eefcf5', icon: '#059669', Icon: Calculator },
+                    reasoning: { bg: '#f5f3ff', icon: '#7c3aed', Icon: Puzzle },
                   };
-                  const tc = typeColors[s.type] || { bg: '#f6f7f9', icon: '#5d6880' };
+                  const tc = typeColors[s.type] || { bg: '#f6f7f9', icon: '#5d6880', Icon: Brain };
+                  const SessionIcon = tc.Icon;
                   return (
                     <div key={s.id}
                       onClick={() => setSelectedSession(s)}
                       className="flex items-center gap-4 p-3.5 rounded-xl border border-transparent hover:border-gray-200 hover:bg-gray-50 transition-all cursor-pointer group">
                       <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
                         style={{ background: tc.bg }}>
-                        <Brain className="w-5 h-5" style={{ color: tc.icon }} />
+                        <SessionIcon className="w-5 h-5" style={{ color: tc.icon }} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm truncate group-hover:text-emerald-700 transition-colors" style={{ color: '#0c0f1a' }}>
@@ -322,27 +362,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Right Sidebar */}
-        <div className="space-y-5">
-
-          {/* Daily Challenge */}
-          <div className="rounded-2xl p-5 text-white"
-            style={{ background: 'linear-gradient(135deg, #1f2333, #323748)' }}>
-            <div className="flex items-center gap-2 mb-3">
-              <Zap className="w-5 h-5 text-yellow-400" />
-              <h2 className="font-bold" style={{ fontFamily: 'Space Grotesk, Inter, sans-serif' }}>Daily Challenge</h2>
-            </div>
-            <p className="text-sm leading-relaxed text-gray-300 mb-4">{todayQuestion}</p>
-            <Link to="/app/mock-interview">
-              <button className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white text-gray-900 font-semibold text-sm hover:bg-gray-100 transition-colors">
-                <Play className="w-4 h-4" style={{ color: '#16b079' }} />
-                Take Challenge
-              </button>
-            </Link>
-          </div>
-
-          {/* Performance Ring */}
-          {profile && profile.avg_score > 0 && (
+        {/* Performance Ring */}
+        {profile && profile.avg_score > 0 && (
+          <div className="space-y-5">
             <div className="card-surface p-5 flex flex-col items-center text-center">
               <h3 className="font-bold text-base mb-4" style={{ color: '#0c0f1a', fontFamily: 'Space Grotesk, Inter, sans-serif' }}>
                 Your Performance
@@ -352,50 +374,8 @@ export default function DashboardPage() {
                 {profile.avg_score >= 80 ? '🎉 Excellent work!' : profile.avg_score >= 60 ? '📈 Good progress!' : '💪 Keep practicing!'}
               </p>
             </div>
-          )}
-
-          {/* Achievements */}
-          <div className="card-surface p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Award className="w-5 h-5" style={{ color: '#16b079' }} />
-              <h2 className="font-bold text-base" style={{ color: '#0c0f1a', fontFamily: 'Space Grotesk, Inter, sans-serif' }}>
-                Achievements
-              </h2>
-            </div>
-            <div className="space-y-2">
-              {[
-                { label: 'First Interview', earned: totalInterviews >= 1, icon: '🎯' },
-                { label: '5-Day Streak', earned: bestStreak >= 5, icon: '🔥' },
-                { label: '10 Interviews', earned: totalInterviews >= 10, icon: '🏆' },
-                { label: 'High Scorer (80+)', earned: (profile?.avg_score || 0) >= 80, icon: '⭐' },
-              ].map((a) => (
-                <div
-                  key={a.label}
-                  className="flex items-center gap-3 p-2.5 rounded-xl transition-colors"
-                  style={{ background: a.earned ? '#eefcf5' : '#f6f7f9' }}
-                >
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-base flex-shrink-0"
-                    style={{ background: a.earned ? 'rgba(22,176,121,0.15)' : 'rgba(0,0,0,0.06)', opacity: a.earned ? 1 : 0.5 }}
-                  >
-                    {a.icon}
-                  </div>
-                  <span className="text-sm font-medium" style={{ color: a.earned ? '#0c4b3a' : '#7e899e' }}>
-                    {a.label}
-                  </span>
-                  {a.earned && (
-                    <div className="ml-auto w-5 h-5 rounded-full flex items-center justify-center" style={{ background: '#16b079' }}>
-                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 12 12">
-                        <path d="M10 3L5 8.5 2 5.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                      </svg>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
           </div>
-
-        </div>
+        )}
       </div>
 
       {/* Selected Session Modal */}
@@ -436,6 +416,26 @@ export default function DashboardPage() {
                 </div>
               )}
 
+              {/* Session Summary */}
+              {(() => {
+                const summary = getSessionSummary(selectedSession);
+                return summary && summary.text ? (
+                  <div className="border border-gray-200 rounded-2xl p-4 bg-white shadow-sm space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-display font-semibold text-gray-900 text-sm">
+                        Session Summary
+                      </h3>
+                      <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-bold', summary.verdictColor)}>
+                        {summary.verdict}
+                      </span>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                      <p className="text-xs text-gray-800 leading-relaxed">{summary.text}</p>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+
               {selectedSession.questions && selectedSession.questions.length > 0 ? (
                 <div className="space-y-4">
                   <h3 className="font-display font-semibold text-gray-900 text-base">
@@ -446,7 +446,7 @@ export default function DashboardPage() {
                     const answerText = typeof qa === 'object' ? qa.answer : (selectedSession.answers && selectedSession.answers[i]) || '(No response)';
                     const score = typeof qa === 'object' ? qa.score : null;
                     const verdict = typeof qa === 'object' ? qa.verdict : null;
-                    const feedback = typeof qa === 'object' ? qa.feedback : null;
+                    const feedback = typeof qa === 'object' ? (qa.feedback || qa.actual_answer || qa.explanation) : null;
 
                     return (
                       <div key={i} className="border border-gray-200 rounded-2xl p-4 bg-white shadow-sm space-y-3">

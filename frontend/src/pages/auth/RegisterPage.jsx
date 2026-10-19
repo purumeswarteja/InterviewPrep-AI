@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Mail, Lock, User, Sparkles, ArrowRight, Brain, CheckCircle2, XCircle, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, Target, ArrowRight, Brain, CheckCircle2, XCircle, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import OtpVerification from '../../components/auth/OtpVerification';
@@ -90,7 +90,7 @@ export default function RegisterPage() {
           {/* Bottom Overlay Content */}
           <div className="relative z-10 space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-semibold backdrop-blur-md">
-              <Sparkles className="w-3.5 h-3.5" />
+              <Target className="w-3.5 h-3.5" />
               <span>{step === 'verify' ? 'Email Verification' : 'Join Successful Candidates'}</span>
             </div>
 

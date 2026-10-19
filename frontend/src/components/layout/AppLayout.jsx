@@ -16,9 +16,11 @@ import {
   Bell,
   ChevronDown,
   User as UserIcon,
-  Flame
+  Sun,
+  Moon
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { cn, getInitials } from "../../lib/utils";
 
 const navItems = [
@@ -35,6 +37,7 @@ const navItems = [
 
 export default function AppLayout() {
   const { user, profile, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -170,16 +173,25 @@ export default function AppLayout() {
               >
                 {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
-              {profile?.streak_count ? (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-50 text-accent-700 text-sm font-medium">
-                  <Flame className="w-4 h-4" />
-                  {profile.streak_count} day streak
-                </div>
-              ) : null}
             </div>
 
             {/* Right side */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Theme toggle */}
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="p-2 rounded-lg hover:bg-ink-100 transition-colors text-ink-600 cursor-pointer"
+                title={theme === "dark" ? "Switch to Light mode" : "Switch to Dark mode"}
+                aria-label="Toggle theme"
+              >
+                {theme === "dark" ? (
+                  <Sun className="w-5 h-5 text-amber-400 hover:rotate-45 transition-transform" />
+                ) : (
+                  <Moon className="w-5 h-5 text-ink-600 hover:-rotate-12 transition-transform" />
+                )}
+              </button>
+
               {/* Notifications bell */}
               <div className="relative">
                 <button

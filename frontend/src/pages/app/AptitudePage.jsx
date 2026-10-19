@@ -72,6 +72,33 @@ const difficultyTimeConfig = {
   Hard: { label: 'Hard', secPerQ: 90, desc: '1.5 min / question' }
 };
 
+const fallbackAptitudeBank = [
+  { id: 1, topicId: 'percentages', question: "If a person's monthly salary increases from $400 to $460, what is the percentage increase in salary?", options: { A: "10%", B: "15%", C: "20%", D: "25%" }, correct_option: "B", explanation: "Increase = $60. Percentage increase = (60 / 400) * 100 = 15%." },
+  { id: 2, topicId: 'percentages', question: "A shopkeeper gives a discount of 20% on an item priced at $150. What is the selling price?", options: { A: "$120", B: "$125", C: "$130", D: "$115" }, correct_option: "A", explanation: "Discount = 20% of 150 = $30. Selling price = 150 - 30 = $120." },
+  { id: 3, topicId: 'percentages', question: "In a class of 50 students, 40% are girls. How many boys are in the class?", options: { A: "20", B: "25", C: "30", D: "35" }, correct_option: "C", explanation: "Percentage of boys = 100% - 40% = 60%. Number of boys = 60% of 50 = 30." },
+  { id: 4, topicId: 'profit_loss', question: "An item bought for $200 is sold for $250. What is the profit percentage?", options: { A: "20%", B: "25%", C: "30%", D: "15%" }, correct_option: "B", explanation: "Profit = $250 - $200 = $50. Profit % = (50 / 200) * 100 = 25%." },
+  { id: 5, topicId: 'profit_loss', question: "If the cost price of 10 articles equals the selling price of 8 articles, find the gain percentage.", options: { A: "20%", B: "25%", C: "30%", D: "12.5%" }, correct_option: "B", explanation: "Let CP of 1 article = $1. CP of 8 = $8, SP of 8 = CP of 10 = $10. Gain % = (2 / 8) * 100 = 25%." },
+  { id: 6, topicId: 'time_work', question: "A can complete a task in 10 days and B in 15 days. Working together, in how many days will they finish the task?", options: { A: "5 days", B: "6 days", C: "7.5 days", D: "8 days" }, correct_option: "B", explanation: "1 day work = 1/10 + 1/15 = (3+2)/30 = 5/30 = 1/6. Hence, 6 days." },
+  { id: 7, topicId: 'speed_distance', question: "A train 150 meters long is traveling at 54 km/h. How many seconds will it take to pass a telegraph post?", options: { A: "10 seconds", B: "12 seconds", C: "15 seconds", D: "8 seconds" }, correct_option: "A", explanation: "54 km/h = 54 * (5/18) = 15 m/s. Time = 150 / 15 = 10 seconds." },
+  { id: 8, topicId: 'probability', question: "What is the probability of obtaining a prime number when rolling a fair 6-sided die?", options: { A: "1/6", B: "1/3", C: "1/2", D: "2/3" }, correct_option: "C", explanation: "Prime numbers on a die are 2, 3, and 5 (3 favorable outcomes out of 6). Probability = 3/6 = 1/2." },
+  { id: 9, topicId: 'numbers_averages', question: "The average of 5 consecutive odd integers is 25. What is the smallest of these numbers?", options: { A: "21", B: "23", C: "19", D: "25" }, correct_option: "A", explanation: "The 5 numbers are 21, 23, 25, 27, 29. The smallest integer is 21." },
+  { id: 10, topicId: 'numbers_averages', question: "Find the average of the first 10 natural numbers.", options: { A: "5", B: "5.5", C: "6", D: "4.5" }, correct_option: "B", explanation: "Sum = (10 * 11) / 2 = 55. Average = 55 / 10 = 5.5." }
+];
+
+function getOfflineAptitudeQuestions(topicId, count = 5) {
+  let filtered = fallbackAptitudeBank.filter((q) => topicId === 'all' || q.topicId === topicId);
+  if (filtered.length === 0) filtered = fallbackAptitudeBank;
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    const template = filtered[i % filtered.length];
+    result.push({
+      ...template,
+      id: i + 1,
+    });
+  }
+  return result;
+}
+
 export default function AptitudePage() {
   const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
@@ -213,7 +240,9 @@ export default function AptitudePage() {
       }
     } catch (err) {
       console.warn('Aptitude questions load error, using fallback:', err.message);
-      toast.error('Using dynamic offline math questions.');
+      const fallbackList = getOfflineAptitudeQuestions(activeTopicObj.id, parsedCount);
+      setQuestions(fallbackList);
+      toast.success('Loaded quantitative practice questions.');
       setStage('active');
     }
   };

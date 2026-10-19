@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  History, Brain, Mic, FileText, Clock, Trash2, Eye, X, Award, Sparkles, UserCheck, Layers, CheckCircle2
+  History, Brain, Mic, Clock, Trash2, X, FileText, Calculator, Puzzle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
@@ -13,8 +13,51 @@ const filters = [
   { id: 'all', label: 'All' },
   { id: 'mock', label: 'Mock' },
   { id: 'hr', label: 'HR' },
-  { id: 'voice', label: 'Voice' }
+  { id: 'aptitude', label: 'Aptitude' },
+  { id: 'reasoning', label: 'Reasoning' }
 ];
+
+function getSessionSummary(session) {
+  if (!session) return null;
+
+  const questionsList = session.questions || [];
+  const score = session.score !== null ? Math.round(session.score) : null;
+  const topic = session.skill || session.topic || 'Interview';
+  const role = session.role ? ` for ${session.role}` : '';
+
+  let verdict = 'Completed';
+  let verdictColor = 'bg-gray-100 text-gray-800';
+
+  if (score !== null) {
+    if (score >= 80) {
+      verdict = 'Outstanding Performance';
+      verdictColor = 'bg-emerald-100 text-emerald-800';
+    } else if (score >= 60) {
+      verdict = 'Proficient Performance';
+      verdictColor = 'bg-amber-100 text-amber-800';
+    } else {
+      verdict = 'Needs Review';
+      verdictColor = 'bg-rose-100 text-rose-800';
+    }
+  }
+
+  let text = '';
+  if (session.feedback && typeof session.feedback === 'object' && session.feedback.summary && !session.feedback.summary.startsWith('Interview completed') && !session.feedback.summary.endsWith('completed')) {
+    text = session.feedback.summary;
+  } else if (score !== null) {
+    if (score >= 80) {
+      text = `Outstanding performance in ${topic}${role}. Clear understanding of core concepts with well-structured answers across ${questionsList.length || 'all'} questions.`;
+    } else if (score >= 60) {
+      text = `Good performance in ${topic}${role}. Solid foundational knowledge shown; adding more practical examples and covering edge cases will help push your score higher.`;
+    } else {
+      text = `Practice completed for ${topic}${role}. Review the key concepts and recommended answers below to strengthen your fundamentals for subsequent rounds.`;
+    }
+  } else {
+    text = `Completed practice session for ${topic}${role} with ${questionsList.length || 0} questions answered.`;
+  }
+
+  return { text, verdict, verdictColor };
+}
 
 export default function HistoryPage() {
   const { user } = useAuth();
@@ -46,7 +89,15 @@ export default function HistoryPage() {
     }
   };
 
-  const typeIcon = (type) => (type === 'mock' ? Brain : type === 'hr' || type === 'voice' ? Mic : FileText);
+  const typeIcon = (type) => {
+    switch (type) {
+      case 'mock': return Brain;
+      case 'hr': return Mic;
+      case 'aptitude': return Calculator;
+      case 'reasoning': return Puzzle;
+      default: return FileText;
+    }
+  };
 
   return (
     <div className="max-w-5xl mx-auto animate-fade-in space-y-6">
@@ -98,11 +149,19 @@ export default function HistoryPage() {
 
             return (
               <Card key={s.id} hover className="group cursor-pointer" onClick={() => setSelected(s)}>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 cursor-pointer" onClick={() => setSelected(s)}>
                   <div
                     className={cn(
                       'w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0',
-                      s.type === 'mock' ? 'bg-emerald-100 text-emerald-700' : s.type === 'hr' ? 'bg-sky-100 text-sky-700' : 'bg-amber-100 text-amber-700'
+                      s.type === 'mock'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : s.type === 'hr'
+                        ? 'bg-sky-100 text-sky-700'
+                        : s.type === 'aptitude'
+                        ? 'bg-teal-100 text-teal-700'
+                        : s.type === 'reasoning'
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'bg-amber-100 text-amber-700'
                     )}
                   >
                     <Icon className="w-6 h-6" />
@@ -110,7 +169,7 @@ export default function HistoryPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-semibold text-gray-900 truncate text-base">{topicText}</p>
-                      <Badge color={s.type === 'mock' ? 'brand' : s.type === 'hr' ? 'sky' : 'accent'} className="capitalize">
+                      <Badge color={s.type === 'mock' ? 'brand' : s.type === 'hr' ? 'sky' : s.type === 'aptitude' ? 'brand' : 'accent'} className="capitalize">
                         {s.type}
                       </Badge>
                       {roleText && (
@@ -136,14 +195,7 @@ export default function HistoryPage() {
                     </div>
                   )}
 
-                  <div className="flex gap-1 items-center" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => setSelected(s)}
-                      className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition"
-                      title="View Details"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
+                  <div className="flex items-center flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={() => handleDelete(s.id)}
                       className="p-2 rounded-lg hover:bg-red-50 text-red-500 transition"
@@ -172,14 +224,11 @@ export default function HistoryPage() {
             {/* Modal Header */}
             <div className="sticky top-0 bg-white border-b border-gray-100 p-5 flex items-center justify-between z-10">
               <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="font-display font-bold text-xl text-gray-900">
-                    {selected.skill || selected.topic || 'Interview Session'}
-                  </h2>
-                  <Badge color="brand" className="capitalize">{selected.type}</Badge>
-                </div>
+                <h2 className="font-display font-bold text-xl text-gray-900">
+                  {selected.skill || selected.topic || 'Interview Session'}
+                </h2>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {formatDate(selected.created_at)} • Duration: {formatDuration(selected.duration_seconds || 0)} • Difficulty: {selected.difficulty || 'Medium'}
+                  Duration: {formatDuration(selected.duration_seconds || 0)} • Difficulty: {selected.difficulty || 'Medium'}
                   {selected.role && ` • Role: ${selected.role}`}
                 </p>
               </div>
@@ -193,7 +242,6 @@ export default function HistoryPage() {
 
             {/* Modal Content */}
             <div className="p-6 space-y-6">
-              {/* Score Header */}
               {selected.score !== null && (
                 <div className="flex flex-col items-center text-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
                   <ScoreRing score={selected.score} size={110} />
@@ -203,44 +251,51 @@ export default function HistoryPage() {
                 </div>
               )}
 
-              {/* Questions & Answers Breakdown */}
+              {/* Session Summary */}
+              {(() => {
+                const summary = getSessionSummary(selected);
+                return summary && summary.text ? (
+                  <div className="border border-gray-200 rounded-2xl p-4 bg-white shadow-sm space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-display font-semibold text-gray-900 text-sm">
+                        Session Summary
+                      </h3>
+                      <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-bold', summary.verdictColor)}>
+                        {summary.verdict}
+                      </span>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                      <p className="text-xs text-gray-800 leading-relaxed">{summary.text}</p>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+
               {selected.questions && selected.questions.length > 0 ? (
                 <div className="space-y-4">
-                  <h3 className="font-display font-semibold text-gray-900 text-base flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-emerald-600" />
-                    Interview Questions & Evaluation Results
+                  <h3 className="font-display font-semibold text-gray-900 text-base">
+                    Interview Questions & Evaluation Breakdown
                   </h3>
-
                   {selected.questions.map((qa, i) => {
                     const questionText = typeof qa === 'string' ? qa : qa.question || `Question ${i + 1}`;
                     const answerText = typeof qa === 'object' ? qa.answer : (selected.answers && selected.answers[i]) || '(No response)';
                     const score = typeof qa === 'object' ? qa.score : null;
                     const verdict = typeof qa === 'object' ? qa.verdict : null;
-                    const feedback = typeof qa === 'object' ? qa.feedback : null;
+                    const feedback = typeof qa === 'object' ? (qa.feedback || qa.actual_answer || qa.explanation) : null;
 
                     return (
-                      <div key={i} className="border border-gray-200 rounded-2xl p-4.5 bg-white shadow-sm space-y-3">
+                      <div key={i} className="border border-gray-200 rounded-2xl p-4 bg-white shadow-sm space-y-3">
                         <div className="flex items-start justify-between gap-3">
-                          <p className="text-sm font-bold text-gray-900 leading-snug">
+                          <p className="text-sm font-bold text-gray-900">
                             {i + 1}. {questionText}
                           </p>
                           {score !== null && score !== undefined && (
-                            <span
-                              className={cn(
-                                'px-2.5 py-0.5 rounded-full text-xs font-bold flex-shrink-0',
-                                score >= 80
-                                  ? 'bg-emerald-100 text-emerald-800'
-                                  : score >= 60
-                                  ? 'bg-amber-100 text-amber-800'
-                                  : 'bg-red-100 text-red-800'
-                              )}
-                            >
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 flex-shrink-0">
                               {score}% {verdict ? `(${verdict})` : ''}
                             </span>
                           )}
                         </div>
 
-                        {/* Candidate Answer */}
                         <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
                           <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">
                             Your Response
@@ -248,16 +303,10 @@ export default function HistoryPage() {
                           <p className="text-xs text-gray-800 leading-relaxed">{answerText}</p>
                         </div>
 
-                        {/* Actual / Model Answer */}
-                        {(qa.actual_answer || qa.explanation || feedback) && (
-                          <div className="bg-blue-50/70 rounded-xl p-3.5 border border-blue-200/80 text-xs text-blue-950 space-y-1">
-                            <p className="font-bold text-blue-900 flex items-center gap-1.5 mb-0.5">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
-                              Actual Answer
-                            </p>
-                            <p className="text-gray-800 leading-relaxed whitespace-pre-line">
-                              {qa.actual_answer || qa.explanation || feedback}
-                            </p>
+                        {feedback && (
+                          <div className="bg-emerald-50/70 rounded-xl p-3 border border-emerald-100 text-xs text-emerald-950">
+                            <p className="font-bold text-emerald-800 mb-0.5">AI Feedback</p>
+                            <p className="text-gray-800 leading-relaxed">{feedback}</p>
                           </div>
                         )}
                       </div>
@@ -265,7 +314,7 @@ export default function HistoryPage() {
                   })}
                 </div>
               ) : (
-                <p className="text-xs text-gray-500 text-center py-4">No detailed question responses recorded for this session.</p>
+                <p className="text-xs text-gray-500 text-center py-4">No detailed question responses recorded.</p>
               )}
             </div>
           </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   UserCheck, Briefcase, GraduationCap, Target, ShieldCheck,
-  Building2, HelpCircle, MessagesSquare, Sparkles, Play, Clock,
+  Building2, HelpCircle, MessagesSquare, Layers, Zap, Play, Clock,
   Mic, MicOff, Volume2, ArrowRight, Check, RotateCcw, FileText,
   RefreshCw, SkipForward, Lightbulb, ChevronDown, ChevronUp, AlertCircle,
   Square, Edit3
@@ -103,7 +103,7 @@ const hrTopicsList = [
   {
     id: 'full-hr',
     name: 'Full HR Round (All Topics)',
-    icon: Sparkles,
+    icon: Layers,
     badgeColor: 'bg-emerald-600 text-white border-emerald-600',
     desc: 'Comprehensive multi-stage HR interview covering all topics.',
     sampleQuestions: [
@@ -366,7 +366,7 @@ export default function HRInterviewPage() {
       return;
     }
 
-    // Move to Next Question (Adaptive Gemini AI Follow-Up Decision)
+    // Move to Next Question (Adaptive AI Follow-Up Decision)
     setStage('loading');
     setLoadingMsg(`AI HR Director is evaluating your response and generating the next question...`);
 
@@ -510,7 +510,7 @@ export default function HRInterviewPage() {
             HR & Behavioral Round Setup
           </h1>
           <p className="text-gray-600 text-sm mt-1">
-            Choose an HR topic section or full interview. Gemini AI acts as an adaptive interviewer with real-time follow-up questions.
+            Choose an HR topic section or full interview. Advanced AI acts as an adaptive interviewer with real-time follow-up questions.
           </p>
         </div>
 
@@ -632,7 +632,7 @@ export default function HRInterviewPage() {
             {loadingMsg}
           </p>
           <p className="text-xs text-gray-400 max-w-sm mx-auto">
-            Gemini AI is analyzing previous responses for adaptive follow-up opportunities.
+            AI is analyzing previous responses for adaptive follow-up opportunities.
           </p>
         </div>
       </div>
@@ -658,7 +658,7 @@ export default function HRInterviewPage() {
                 <Badge color="brand">HR Round</Badge>
                 {isFollowupQuestion && (
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1 animate-pulse">
-                    <Sparkles className="w-3 h-3 text-amber-600" />
+                    <Zap className="w-3 h-3 text-amber-600" />
                     Adaptive Follow-Up
                   </span>
                 )}
@@ -946,7 +946,7 @@ export default function HRInterviewPage() {
               {evalObj.feedback && (
                 <div className="bg-emerald-50/60 rounded-xl p-3.5 border border-emerald-100">
                   <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-emerald-600" />
+                    <Check className="w-4 h-4 text-emerald-600" />
                     AI HR Evaluation
                   </p>
                   <p className="text-sm text-gray-800 leading-relaxed">

@@ -1,4 +1,12 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+dotenv.config();
+
 import dns from 'node:dns';
 dns.setDefaultResultOrder('ipv4first');
 import express from 'express';
@@ -14,7 +22,7 @@ import User from './models/User.js';
 import Profile from './models/Profile.js';
 import InterviewSession from './models/InterviewSession.js';
 import ResumeAnalysis from './models/ResumeAnalysis.js';
-import { sendOtpEmail } from './utils/mailer.js';
+import { sendOtpEmail, sendWeeklyGoalReachedEmail, sendDailyPracticeReminderEmail } from './utils/mailer.js';
 import { getSkillDifficultyQuestion, getActualAnswerForQuestion } from './utils/mockQuestionBank.js';
 
 const app = express();
@@ -22,7 +30,8 @@ const port = process.env.PORT || 4000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/interviewprep';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const apiKey = process.env.GEMINI_API_KEY || process.env.AI_API_KEY || '';
+const ai = new GoogleGenAI({ apiKey });
 
 app.use(cors());
 app.use(express.json());
@@ -131,7 +140,7 @@ app.post('/api/auth/signup', async (req, res) => {
       await Profile.findOneAndUpdate(
         { user_id: userId },
         { full_name: full_name.trim(), updated_at: new Date().toISOString() },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: 'after' }
       );
     } else {
       // Create new unverified user
@@ -168,6 +177,98 @@ app.post('/api/auth/signup', async (req, res) => {
     res.status(500).json({ error: err.message || 'Server error during signup.' });
   }
 });
+
+// ─── Daily Login Streak Logic ────────────────────────────────────────────────
+async function updateDailyLoginStreak(userId) {
+  try {
+    let profile = await Profile.findOne({ user_id: userId });
+    if (!profile) return null;
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const lastActiveStr = profile.last_active_date;
+
+    if (!lastActiveStr) {
+      profile.streak_count = 1;
+      profile.last_active_date = todayStr;
+      if (profile.streak_count > (profile.longest_streak || 0)) {
+        profile.longest_streak = profile.streak_count;
+      }
+      await profile.save();
+      return profile;
+    }
+
+    if (lastActiveStr === todayStr) {
+      return profile;
+    }
+
+    const dToday = new Date(todayStr);
+    const dLast = new Date(lastActiveStr);
+    const diffDays = Math.round((dToday.getTime() - dLast.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) {
+      // Consecutive calendar day: increment streak
+      profile.streak_count = (profile.streak_count || 0) + 1;
+    } else if (diffDays > 1) {
+      // Missed at least one calendar day: reset streak, start at 1 for today's login
+      profile.streak_count = 1;
+    }
+
+    profile.last_active_date = todayStr;
+    if (profile.streak_count > (profile.longest_streak || 0)) {
+      profile.longest_streak = profile.streak_count;
+    }
+    await profile.save();
+    return profile;
+  } catch (err) {
+    console.error('Error in updateDailyLoginStreak:', err);
+    return null;
+  }
+}
+
+// Background task: reset streak for inactive users who missed a day and send practice reminders
+async function runDailyInactivityAndReminderCheck() {
+  try {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const profiles = await Profile.find({});
+
+    for (const p of profiles) {
+      if (!p.user_id) continue;
+
+      // 1. Reset streak to 0 if user missed yesterday and hasn't logged in today
+      if (p.last_active_date) {
+        const dToday = new Date(todayStr);
+        const dLast = new Date(p.last_active_date);
+        const diffDays = Math.round((dToday.getTime() - dLast.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays > 1 && p.streak_count > 0) {
+          p.streak_count = 0;
+          await p.save();
+        }
+      }
+
+      // 2. Practice reminder email if user hasn't logged in today
+      const wantsReminders = p.notifications?.practice_reminders !== false;
+      const notLoggedInToday = p.last_active_date !== todayStr;
+      const notSentToday = p.last_daily_reminder_date !== todayStr;
+
+      if (wantsReminders && notLoggedInToday && notSentToday) {
+        const user = await User.findOne({ id: p.user_id });
+        if (user && user.email && user.isEmailVerified) {
+          p.last_daily_reminder_date = todayStr;
+          await p.save();
+          sendDailyPracticeReminderEmail(user.email, {
+            name: p.full_name || 'there',
+          }).catch((e) => console.warn('Practice reminder email dispatch failed:', e.message));
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error in runDailyInactivityAndReminderCheck:', err);
+  }
+}
+
+// Background checker for daily inactivity and reminders (runs every 30 minutes)
+setInterval(runDailyInactivityAndReminderCheck, 30 * 60 * 1000);
+setTimeout(runDailyInactivityAndReminderCheck, 10 * 1000);
 
 // Login
 app.post('/api/auth/login', async (req, res) => {
@@ -212,6 +313,8 @@ app.post('/api/auth/login', async (req, res) => {
         message: 'Your account is pending email verification. A verification code has been dispatched.',
       });
     }
+
+    await updateDailyLoginStreak(user.id);
 
     const token = jwt.sign(
       { userId: user.id, email: user.email, isEmailVerified: true },
@@ -301,6 +404,8 @@ app.post('/api/auth/verify-otp', async (req, res) => {
     user.otpAttempts = 0;
     user.otpLastSentAt = null;
     await user.save();
+
+    await updateDailyLoginStreak(user.id);
 
     const token = jwt.sign(
       { userId: user.id, email: user.email, isEmailVerified: true },
@@ -1041,6 +1146,7 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
     if (!profile) {
       profile = await Profile.create({ user_id: req.user.userId });
     }
+    profile = (await updateDailyLoginStreak(req.user.userId)) || profile;
     res.json({
       user: {
         id: req.user.userId,
@@ -1195,7 +1301,7 @@ app.put('/api/profile', authMiddleware, async (req, res) => {
     const profile = await Profile.findOneAndUpdate(
       { user_id: req.user.userId },
       { ...req.body, updated_at: new Date().toISOString() },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!profile) return res.status(404).json({ error: 'Profile not found' });
     res.json({ profile });
@@ -1221,12 +1327,16 @@ app.post('/api/sessions', authMiddleware, async (req, res) => {
       id: uuidv4(),
       user_id: req.user.userId,
       type: req.body.type || 'mock',
-      topic: req.body.topic || 'Practice',
+      role: req.body.role || '',
+      skill: req.body.skill || '',
+      topic: req.body.topic || req.body.skill || 'Practice',
       difficulty: req.body.difficulty || 'medium',
+      numberOfQuestions: req.body.numberOfQuestions || req.body.questions?.length || 5,
       score: req.body.score ?? null,
       duration_seconds: req.body.duration_seconds ?? null,
       questions: req.body.questions || [],
       answers: req.body.answers || [],
+      evaluations: req.body.evaluations || [],
       feedback: req.body.feedback || {},
       status: req.body.status || 'completed',
     });
@@ -1238,14 +1348,41 @@ app.post('/api/sessions', authMiddleware, async (req, res) => {
       ? scoredSessions.reduce((sum, s) => sum + Number(s.score), 0) / scoredSessions.length
       : 0;
 
-    await Profile.findOneAndUpdate(
+    const updatedProfile = await Profile.findOneAndUpdate(
       { user_id: req.user.userId },
       {
         total_interviews: allSessions.length,
         avg_score,
         updated_at: new Date().toISOString(),
-      }
+      },
+      { returnDocument: 'after' }
     );
+
+    // Check weekly goal notification
+    if (updatedProfile && updatedProfile.weekly_goal > 0) {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      const weeklyCompleted = allSessions.filter((s) => new Date(s.created_at) > oneWeekAgo).length;
+
+      const now = new Date();
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      const weekNumber = Math.ceil((((now - startOfYear) / 86400000) + startOfYear.getDay() + 1) / 7);
+      const currentWeekStr = `${now.getFullYear()}-W${weekNumber}`;
+
+      if (weeklyCompleted >= updatedProfile.weekly_goal && updatedProfile.last_weekly_goal_email_sent_week !== currentWeekStr) {
+        updatedProfile.last_weekly_goal_email_sent_week = currentWeekStr;
+        await updatedProfile.save();
+
+        const user = await User.findOne({ id: req.user.userId });
+        if (user && user.email) {
+          sendWeeklyGoalReachedEmail(user.email, {
+            name: updatedProfile.full_name || 'there',
+            weeklyGoal: updatedProfile.weekly_goal,
+            completedSessions: weeklyCompleted,
+          }).catch((e) => console.warn('Weekly goal email failed:', e.message));
+        }
+      }
+    }
 
     res.json({ session });
   } catch (err) {
@@ -1279,6 +1416,7 @@ app.post('/api/resume-analyses', authMiddleware, async (req, res) => {
       grammar_score: req.body.grammar_score || 0,
       keyword_score: req.body.keyword_score || 0,
       overall_score: req.body.overall_score || 0,
+      detected_domain: req.body.detected_domain || 'General Tech',
       keywords_found: req.body.keywords_found || [],
       keywords_missing: req.body.keywords_missing || [],
       suggestions: req.body.suggestions || [],
@@ -1291,7 +1429,7 @@ app.post('/api/resume-analyses', authMiddleware, async (req, res) => {
   }
 });
 
-// ─── AI Integration Routes (Google Gemini) ───────────────────────────────────
+// ─── AI Integration Routes ───────────────────────────────────────────────────
 
 function cleanJsonResponse(text) {
   try {
@@ -1306,7 +1444,7 @@ function cleanJsonResponse(text) {
   }
 }
 
-async function callGeminiApi(prompt) {
+async function callAiApi(prompt) {
   const models = ['gemini-flash-lite-latest', 'gemini-3.5-flash-lite', 'gemini-flash-latest'];
   let lastError;
 
@@ -1324,17 +1462,17 @@ async function callGeminiApi(prompt) {
         lastError = err;
         // If 429 quota or 404 model not found, immediately break to try next model
         if (err.status === 429 || err.status === 404 || err.message?.includes('quota') || err.message?.includes('429')) {
-          console.warn(`Gemini model ${model} hit ${err.status || 'quota'}, trying next model...`);
+          console.warn(`AI model ${model} hit ${err.status || 'quota'}, trying next model...`);
           break;
         }
-        console.warn(`Gemini AI (${model}) attempt ${attempt} failed (${err.message}). Retrying...`);
+        console.warn(`AI (${model}) attempt ${attempt} failed (${err.message}). Retrying...`);
         if (attempt < 2) {
           await new Promise((r) => setTimeout(r, 1000));
         }
       }
     }
   }
-  throw lastError || new Error('Gemini AI call failed after trying available models');
+  throw lastError || new Error('AI call failed after trying available models');
 }
 
 
@@ -1375,7 +1513,7 @@ Respond ONLY with a valid JSON object in this exact format (no extra text):
   "suggestions": ["array of actionable recommendations"]
 }`;
 
-    const rawText = await callGeminiApi(prompt);
+    const rawText = await callAiApi(prompt);
     const parsed = cleanJsonResponse(rawText);
     if (!parsed) {
       return res.status(500).json({ error: 'Failed to parse AI resume analysis output.' });
@@ -1418,7 +1556,7 @@ app.post('/api/ai/evaluate-interview', async (req, res) => {
         const modelPrompt = `As a Senior Technical Interviewer in "${topic || 'Software Engineering'}", provide the exact, clear, and comprehensive actual answer/solution (3-5 sentences) to this technical interview question:
 "${question}"
 Do not include any conversational filler. State the core concept, key components, and best practice answer directly.`;
-        actualAns = (await callGeminiApi(modelPrompt)) || '';
+        actualAns = (await callAiApi(modelPrompt)) || '';
       } catch (e) {
         console.warn('Fallback model answer generation:', e.message);
       }
@@ -1472,10 +1610,10 @@ Respond ONLY with a valid JSON object in this exact format (no extra markdown ou
 
     let parsed = null;
     try {
-      const rawText = await callGeminiApi(prompt);
+      const rawText = await callAiApi(prompt);
       parsed = cleanJsonResponse(rawText);
     } catch (apiErr) {
-      console.warn('Gemini evaluate-interview call failed, calculating fallback:', apiErr.message);
+      console.warn('AI evaluate-interview call failed, calculating fallback:', apiErr.message);
     }
 
     const curatedActual = getActualAnswerForQuestion(question, topic || category, difficulty);
@@ -1536,7 +1674,7 @@ app.post('/api/ai/generate-next-question', async (req, res) => {
     // Merge current session + cross-session history for the forbidden list
     const allAsked = [...new Set([...(allPreviousQuestions || []), ...(previousQuestions || [])])];
 
-    // Prepare Gemini prompt to evaluate previous QA (if any) and generate next question tailored to skill and difficulty
+    // Prepare AI prompt to evaluate previous QA (if any) and generate next question tailored to skill and difficulty
     const prompt = `You are a Senior Technical Interviewer conducting a mock interview for the role of "${role}".
 Target Skill / Technology: "${skill}"
 Difficulty Level: "${difficulty}" (Easy / Medium / Hard)
@@ -1587,10 +1725,10 @@ Respond ONLY with valid JSON in this exact structure:
 
     let parsed = null;
     try {
-      const rawText = await callGeminiApi(prompt);
+      const rawText = await callAiApi(prompt);
       parsed = cleanJsonResponse(rawText);
     } catch (apiErr) {
-      console.warn('Gemini generate-next-question failed, using skill-aware fallback:', apiErr.message);
+      console.warn('AI generate-next-question failed, using skill-aware fallback:', apiErr.message);
     }
 
     let nextQuestionText = parsed?.question;
@@ -1701,10 +1839,10 @@ Respond ONLY with a valid JSON object in this exact format (no markdown formatti
     let rawText;
     let parsed;
     try {
-      rawText = await callGeminiApi(prompt);
+      rawText = await callAiApi(prompt);
       parsed = cleanJsonResponse(rawText);
     } catch (apiErr) {
-      console.warn('Gemini API call failed for HR question, using topic fallback:', apiErr.message);
+      console.warn('AI call failed for HR question, using topic fallback:', apiErr.message);
     }
 
     if (!parsed || !parsed.question) {
@@ -1977,7 +2115,7 @@ ${prevSet.size > 0 ? `- Do NOT ask about these previously seen topics/phrases: $
 Respond ONLY with a raw JSON array of exactly ${qCount} objects, each having:
 {"id":number,"question":string,"options":{"A":string,"B":string,"C":string,"D":string},"correct_option":"A"|"B"|"C"|"D","explanation":string}`;
 
-      const text = await callGeminiApi(prompt);
+      const text = await callAiApi(prompt);
       const cleaned = text.replace(/```json|```/gi, '').trim();
       // Extract JSON array robustly
       const match = cleaned.match(/\[[\s\S]*\]/);
@@ -2199,7 +2337,7 @@ ${prevSet.size > 0 ? `- Do NOT repeat these previously seen questions: ${[...pre
 Respond ONLY with a raw JSON array of exactly ${qCount} objects:
 {"id":number,"question":string,"options":{"A":string,"B":string,"C":string,"D":string},"correct_option":"A"|"B"|"C"|"D","explanation":string}`;
 
-      const text = await callGeminiApi(prompt);
+      const text = await callAiApi(prompt);
       const match = text.replace(/```json|```/gi, '').trim().match(/\[[\s\S]*\]/);
       if (match) {
         const parsed = JSON.parse(match[0]);
@@ -2256,6 +2394,34 @@ app.post('/api/password-reset', async (req, res) => {
   const user = await User.findOne({ email: email.toLowerCase() });
   if (!user) return res.status(200).json({ message: 'If that email exists, a reset link has been sent.' });
   res.json({ message: 'Password reset request received. (Not implemented in mock backend)' });
+});
+
+// ─── Notification Test Endpoints ──────────────────────────────────────────────
+
+app.post('/api/notifications/test-reminder', authMiddleware, async (req, res) => {
+  try {
+    const profile = await Profile.findOne({ user_id: req.user.userId });
+    const result = await sendDailyPracticeReminderEmail(req.user.email, {
+      name: profile?.full_name || 'there',
+    });
+    res.json({ success: true, message: `Practice reminder test email sent to ${req.user.email}`, result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/notifications/test-goal', authMiddleware, async (req, res) => {
+  try {
+    const profile = await Profile.findOne({ user_id: req.user.userId });
+    const result = await sendWeeklyGoalReachedEmail(req.user.email, {
+      name: profile?.full_name || 'there',
+      weeklyGoal: profile?.weekly_goal || 5,
+      completedSessions: profile?.weekly_goal || 5,
+    });
+    res.json({ success: true, message: `Weekly goal test email sent to ${req.user.email}`, result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ─── Start Server ─────────────────────────────────────────────────────────────

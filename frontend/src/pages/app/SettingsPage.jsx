@@ -17,11 +17,15 @@ import {
   Clock,
   Award,
   Lightbulb,
-  Check
+  Check,
+  Palette,
+  Sun,
+  Moon
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { api } from "../../lib/api";
 import { Card, Button } from "../../components/ui";
 import { cn } from "../../lib/utils";
@@ -51,6 +55,7 @@ export default function SettingsPage() {
     resendPasswordChangeOtp,
     refreshProfile
   } = useAuth();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 
   // 1. Weekly Goal (Default 0, no monthly goal)
@@ -548,6 +553,158 @@ export default function SettingsPage() {
         <p className="text-ink-500 mt-1">Manage your account, preferences, and weekly goals.</p>
       </div>
 
+      {/* ─── Appearance Card (Light Mode / Dark Mode) ────────────────────── */}
+      <Card>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-display font-semibold text-lg text-ink-900 flex items-center gap-2">
+            <Palette className="w-5 h-5 text-brand-500" />
+            <span>Appearance</span>
+          </h2>
+          <span className="text-xs px-2.5 py-1 rounded-full bg-brand-50 text-brand-700 border border-brand-200 font-medium">
+            {theme === "dark" ? "Dark Mode Active" : "Light Mode Active"}
+          </span>
+        </div>
+        <p className="text-sm text-ink-500 mb-5">
+          Choose how Interview Prep AI looks on your device.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Light Mode Option */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => {
+              if (theme !== "light") {
+                setTheme("light");
+                toast.success("Theme switched to Light mode");
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setTheme("light");
+                toast.success("Theme switched to Light mode");
+              }
+            }}
+            className={cn(
+              "relative p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between group",
+              theme === "light"
+                ? "border-brand-500 bg-brand-50/40 shadow-sm ring-2 ring-brand-500/20"
+                : "border-ink-100 hover:border-ink-300 hover:bg-ink-50/50"
+            )}
+          >
+            <div>
+              {/* Mini mockup illustration */}
+              <div className="w-full h-24 rounded-xl border border-gray-200 !bg-[#ffffff] p-2.5 mb-3 flex flex-col gap-1.5 shadow-sm overflow-hidden pointer-events-none">
+                <div className="flex items-center justify-between pb-1.5 border-b !border-gray-100">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full !bg-emerald-500" />
+                    <div className="w-12 h-2 rounded !bg-gray-200" />
+                  </div>
+                  <div className="w-4 h-4 rounded-full !bg-amber-100 flex items-center justify-center">
+                    <Sun className="w-2.5 h-2.5 !text-amber-600" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5 flex-1">
+                  <div className="rounded !bg-emerald-50 border !border-emerald-100" />
+                  <div className="rounded !bg-sky-50 border !border-sky-100" />
+                  <div className="rounded !bg-amber-50 border !border-amber-100" />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg !bg-amber-100 !text-amber-600 flex items-center justify-center">
+                    <Sun className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-ink-900">Light mode</p>
+                    <p className="text-xs text-ink-500">Bright, clean, and crisp</p>
+                  </div>
+                </div>
+                <div
+                  className={cn(
+                    "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
+                    theme === "light"
+                      ? "border-brand-500 bg-brand-500 text-white"
+                      : "border-ink-300"
+                  )}
+                >
+                  {theme === "light" && <Check className="w-3 h-3 stroke-[3]" />}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Dark Mode Option */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => {
+              if (theme !== "dark") {
+                setTheme("dark");
+                toast.success("Theme switched to Dark mode");
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setTheme("dark");
+                toast.success("Theme switched to Dark mode");
+              }
+            }}
+            className={cn(
+              "relative p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between group",
+              theme === "dark"
+                ? "border-brand-500 bg-brand-950/20 shadow-sm ring-2 ring-brand-500/20"
+                : "border-ink-100 hover:border-ink-300 hover:bg-ink-50/50"
+            )}
+          >
+            <div>
+              {/* Mini mockup illustration */}
+              <div className="w-full h-24 rounded-xl border !border-gray-800 !bg-[#0f131f] p-2.5 mb-3 flex flex-col gap-1.5 shadow-sm overflow-hidden pointer-events-none">
+                <div className="flex items-center justify-between pb-1.5 border-b !border-gray-800/80">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full !bg-emerald-400" />
+                    <div className="w-12 h-2 rounded !bg-gray-700" />
+                  </div>
+                  <div className="w-4 h-4 rounded-full !bg-indigo-950/80 flex items-center justify-center">
+                    <Moon className="w-2.5 h-2.5 !text-indigo-400" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5 flex-1">
+                  <div className="rounded !bg-emerald-950/40 border !border-emerald-800/40" />
+                  <div className="rounded !bg-sky-950/40 border !border-sky-800/40" />
+                  <div className="rounded !bg-amber-950/40 border !border-amber-800/40" />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400 flex items-center justify-center">
+                    <Moon className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-ink-900">Dark mode</p>
+                    <p className="text-xs text-ink-500">Gentle on eyes in low light</p>
+                  </div>
+                </div>
+                <div
+                  className={cn(
+                    "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
+                    theme === "dark"
+                      ? "border-brand-500 bg-brand-500 text-white"
+                      : "border-ink-300"
+                  )}
+                >
+                  {theme === "dark" && <Check className="w-3 h-3 stroke-[3]" />}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       {/* ─── Interview Goals Card (Weekly only, default 0) ────────────────── */}
       <Card>
         <h2 className="font-display font-semibold text-lg text-ink-900 mb-4 flex items-center gap-2">
@@ -617,7 +774,7 @@ export default function SettingsPage() {
                 >
                   <span
                     className={cn(
-                      "absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform shadow-sm",
+                      "absolute top-0.5 w-5 h-5 rounded-full !bg-white transition-transform shadow-sm",
                       isEnabled ? "translate-x-5" : "translate-x-0.5"
                     )}
                   />

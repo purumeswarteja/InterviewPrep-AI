@@ -10,6 +10,7 @@ const resumeAnalysisSchema = new mongoose.Schema({
   grammar_score: { type: Number, default: 0 },
   keyword_score: { type: Number, default: 0 },
   overall_score: { type: Number, default: 0 },
+  detected_domain: { type: String, default: 'General Tech' },
   keywords_found: { type: [String], default: [] },
   keywords_missing: { type: [String], default: [] },
   suggestions: { type: [String], default: [] },

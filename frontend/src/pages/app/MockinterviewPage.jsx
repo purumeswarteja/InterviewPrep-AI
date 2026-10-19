@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Brain, Clock, ArrowRight, RotateCcw, Sparkles, Award,
+  Brain, Clock, ArrowRight, RotateCcw, Award,
   CheckCircle2, Mic, SkipForward, Play, RefreshCw,
   AlertCircle, FileText, Check, Layers, UserCheck, Square, Edit3
 } from 'lucide-react';
@@ -377,7 +377,7 @@ export default function MockInterviewPage() {
             AI Mock Interview Setup
           </h1>
           <p className="text-gray-600 text-sm mt-1">
-            Configure your technical interview. Gemini AI generates adaptive, unique questions every session.
+            Configure your technical interview. Advanced AI generates adaptive, unique questions every session.
           </p>
         </div>
 
@@ -533,7 +533,7 @@ export default function MockInterviewPage() {
           <h2 className="font-display font-bold text-2xl text-gray-900">Generating Dynamic Question</h2>
           <p className="text-emerald-700 font-medium text-sm">{loadingMsg}</p>
           <p className="text-xs text-gray-400 max-w-sm mx-auto">
-            Gemini AI is tailoring unique technical questions for <strong>{skill}</strong> ({role || 'General'}).
+            AI is tailoring unique technical questions for <strong>{skill}</strong> ({role || 'General'}).
           </p>
         </div>
       </div>
