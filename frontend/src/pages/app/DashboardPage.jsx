@@ -15,8 +15,8 @@ const quickActions = [
     icon: Calculator,
     label: 'Quantitative Aptitude',
     desc: 'Math, ratios, speeds & logic',
-    gradient: 'linear-gradient(135deg, #059669, #047857)',
-    shadow: 'rgba(5,150,105,0.35)',
+    gradient: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+    shadow: 'rgba(99,102,241,0.35)',
   },
   {
     to: '/app/reasoning',
@@ -31,8 +31,8 @@ const quickActions = [
     icon: Brain,
     label: 'AI Mock Interview',
     desc: 'Technical deep-dive questions',
-    gradient: 'linear-gradient(135deg, #16b079, #0c8f63)',
-    shadow: 'rgba(22,176,121,0.35)',
+    gradient: 'linear-gradient(135deg, #7c3aed, #5b21b6)',
+    shadow: 'rgba(124,58,237,0.35)',
   },
   {
     to: '/app/hr-interview',
@@ -85,7 +85,7 @@ function getSessionSummary(session) {
   if (score !== null) {
     if (score >= 80) {
       verdict = 'Outstanding Performance';
-      verdictColor = 'bg-emerald-100 text-emerald-800';
+      verdictColor = 'bg-violet-100 text-violet-800';
     } else if (score >= 60) {
       verdict = 'Proficient Performance';
       verdictColor = 'bg-amber-100 text-amber-800';
@@ -165,7 +165,7 @@ export default function DashboardPage() {
 
       {/* ── Hero Banner ── */}
       <div className="rounded-2xl p-8 text-white relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #0c4b3a 0%, #16b079 50%, #06a5f1 100%)' }}>
+        style={{ background: 'linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #6366f1 100%)' }}>
         {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full opacity-20"
@@ -199,7 +199,7 @@ export default function DashboardPage() {
           </div>
           <Link to="/app/mock-interview"
             className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-gray-900 font-semibold text-sm shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95">
-            <Play className="w-4 h-4" style={{ color: '#16b079' }} />
+            <Play className="w-4 h-4" style={{ color: '#7c3aed' }} />
             Start a Practice
           </Link>
         </div>
@@ -211,10 +211,10 @@ export default function DashboardPage() {
           icon={Brain}
           value={totalInterviews}
           label="Total Interviews"
-          bg="linear-gradient(135deg, #eefcf5, #d6f8e9)"
-          iconBg="rgba(22,176,121,0.15)"
-          iconColor="#0c8f63"
-          textColor="#042a20"
+          bg="linear-gradient(135deg, #f5f3ff, #ede9fe)"
+          iconBg="rgba(124,58,237,0.15)"
+          iconColor="#7c3aed"
+          textColor="#2e1065"
         />
         <StatCard
           icon={Target}
@@ -285,7 +285,7 @@ export default function DashboardPage() {
               </h2>
               <Link to="/app/history"
                 className="text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all"
-                style={{ color: '#0c8f63' }}>
+                style={{ color: '#7c3aed' }}>
                 View all <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -304,7 +304,7 @@ export default function DashboardPage() {
                 action={
                   <Link to="/app/mock-interview">
                     <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-semibold text-sm transition-all hover:opacity-90"
-                      style={{ background: 'linear-gradient(135deg, #16b079, #06a5f1)' }}>
+                      style={{ background: 'linear-gradient(135deg, #7c3aed, #6366f1)' }}>
                       Start Practicing
                     </button>
                   </Link>
@@ -314,7 +314,7 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 {sessions.slice(0, 6).map((s) => {
                   const typeColors = {
-                    mock: { bg: '#eefcf5', icon: '#0c8f63', Icon: Brain },
+                    mock: { bg: '#f5f3ff', icon: '#7c3aed', Icon: Brain },
                     hr: { bg: '#eff9ff', icon: '#0084d1', Icon: Mic },
                     aptitude: { bg: '#eefcf5', icon: '#059669', Icon: Calculator },
                     reasoning: { bg: '#f5f3ff', icon: '#7c3aed', Icon: Puzzle },
@@ -330,7 +330,7 @@ export default function DashboardPage() {
                         <SessionIcon className="w-5 h-5" style={{ color: tc.icon }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate group-hover:text-emerald-700 transition-colors" style={{ color: '#0c0f1a' }}>
+                        <p className="font-semibold text-sm truncate group-hover:text-violet-700 transition-colors" style={{ color: '#0c0f1a' }}>
                           {s.skill || s.topic || 'Practice'}
                         </p>
                         <div className="flex items-center gap-3 mt-0.5 text-xs" style={{ color: '#5d6880' }}>
@@ -347,8 +347,8 @@ export default function DashboardPage() {
                         <div
                           className="px-2.5 py-1 rounded-lg text-sm font-bold flex-shrink-0"
                           style={{
-                            background: s.score >= 80 ? '#eefcf5' : s.score >= 60 ? '#fff8ed' : '#fff1f2',
-                            color: s.score >= 80 ? '#0c4b3a' : s.score >= 60 ? '#451706' : '#450a0a',
+                            background: s.score >= 80 ? '#f5f3ff' : s.score >= 60 ? '#fff8ed' : '#fff1f2',
+                            color: s.score >= 80 ? '#5b21b6' : s.score >= 60 ? '#451706' : '#450a0a',
                           }}
                         >
                           {Math.round(s.score)}%
@@ -455,7 +455,7 @@ export default function DashboardPage() {
                             {i + 1}. {questionText}
                           </p>
                           {score !== null && score !== undefined && (
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 flex-shrink-0">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-violet-100 text-violet-800 flex-shrink-0">
                               {score}% {verdict ? `(${verdict})` : ''}
                             </span>
                           )}
@@ -469,8 +469,8 @@ export default function DashboardPage() {
                         </div>
 
                         {feedback && (
-                          <div className="bg-emerald-50/70 rounded-xl p-3 border border-emerald-100 text-xs text-emerald-950">
-                            <p className="font-bold text-emerald-800 mb-0.5">AI Feedback</p>
+                          <div className="bg-violet-50/70 rounded-xl p-3 border border-violet-100 text-xs text-violet-950">
+                            <p className="font-bold text-violet-800 mb-0.5">AI Feedback</p>
                             <p className="text-gray-800 leading-relaxed">{feedback}</p>
                           </div>
                         )}

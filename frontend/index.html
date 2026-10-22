@@ -14,8 +14,9 @@
     <script>
       (function() {
         try {
+          var isApp = window.location.pathname.indexOf('/app') === 0;
           var t = localStorage.getItem('app_theme');
-          if (t === 'dark') {
+          if (!isApp || t === 'dark') {
             document.documentElement.classList.add('dark');
             document.documentElement.style.colorScheme = 'dark';
           } else {

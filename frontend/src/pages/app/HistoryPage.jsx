@@ -31,7 +31,7 @@ function getSessionSummary(session) {
   if (score !== null) {
     if (score >= 80) {
       verdict = 'Outstanding Performance';
-      verdictColor = 'bg-emerald-100 text-emerald-800';
+      verdictColor = 'bg-violet-100 text-violet-800';
     } else if (score >= 60) {
       verdict = 'Proficient Performance';
       verdictColor = 'bg-amber-100 text-amber-800';
@@ -113,7 +113,7 @@ export default function HistoryPage() {
             onClick={() => setFilter(f.id)}
             className={cn(
               'px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap',
-              filter === f.id ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+              filter === f.id ? 'bg-violet-600 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
             )}
           >
             {f.label}
@@ -135,7 +135,7 @@ export default function HistoryPage() {
             description={filter === 'all' ? 'Start your first interview practice session to see it here.' : `No ${filter} interviews yet. Try one now!`}
             action={
               <Link to="/app/mock-interview">
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">Start Mock Interview</Button>
+                <Button className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl">Start Mock Interview</Button>
               </Link>
             }
           />
@@ -154,7 +154,7 @@ export default function HistoryPage() {
                     className={cn(
                       'w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0',
                       s.type === 'mock'
-                        ? 'bg-emerald-100 text-emerald-700'
+                        ? 'bg-violet-100 text-violet-700'
                         : s.type === 'hr'
                         ? 'bg-sky-100 text-sky-700'
                         : s.type === 'aptitude'
@@ -290,7 +290,7 @@ export default function HistoryPage() {
                             {i + 1}. {questionText}
                           </p>
                           {score !== null && score !== undefined && (
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 flex-shrink-0">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-violet-100 text-violet-800 flex-shrink-0">
                               {score}% {verdict ? `(${verdict})` : ''}
                             </span>
                           )}
@@ -304,8 +304,8 @@ export default function HistoryPage() {
                         </div>
 
                         {feedback && (
-                          <div className="bg-emerald-50/70 rounded-xl p-3 border border-emerald-100 text-xs text-emerald-950">
-                            <p className="font-bold text-emerald-800 mb-0.5">AI Feedback</p>
+                          <div className="bg-violet-50/70 rounded-xl p-3 border border-violet-100 text-xs text-violet-950">
+                            <p className="font-bold text-violet-800 mb-0.5">AI Feedback</p>
                             <p className="text-gray-800 leading-relaxed">{feedback}</p>
                           </div>
                         )}

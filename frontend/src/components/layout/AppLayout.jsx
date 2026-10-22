@@ -13,7 +13,6 @@ import {
   LogOut,
   Menu,
   X,
-  Bell,
   ChevronDown,
   User as UserIcon,
   Sun,
@@ -22,6 +21,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { cn, getInitials } from "../../lib/utils";
+import NotificationDropdown from "./NotificationDropdown";
 
 const navItems = [
   { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -41,7 +41,6 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [bellOpen, setBellOpen] = useState(false);
   const [avatarSrc, setAvatarSrc] = useState(null);
 
   // Load avatar from localStorage and keep in sync with profile page uploads
@@ -100,13 +99,13 @@ export default function AppLayout() {
         {/* Logo */}
         <div className="p-5 border-b border-white/10">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-glow flex-shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-glow flex-shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
               </svg>
             </div>
             <span className="font-display font-bold text-base leading-tight">
-              Interview Prep <em className="not-italic font-bold text-emerald-400">AI</em>
+              Interview Prep <em className="not-italic font-bold text-violet-400">AI</em>
             </span>
           </Link>
         </div>
@@ -192,40 +191,8 @@ export default function AppLayout() {
                 )}
               </button>
 
-              {/* Notifications bell */}
-              <div className="relative">
-                <button
-                  onClick={() => setBellOpen(!bellOpen)}
-                  className="relative p-2 rounded-lg hover:bg-ink-100 transition-colors"
-                  aria-label="Notifications"
-                >
-                  <Bell className="w-5 h-5 text-ink-600" />
-                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent-500" />
-                </button>
-                {bellOpen && (
-                  <div
-                    className="absolute right-0 mt-2 w-80 card-surface overflow-hidden animate-fade-down"
-                    onMouseLeave={() => setBellOpen(false)}
-                  >
-                    <div className="px-4 py-3 border-b border-ink-100 flex items-center justify-between">
-                      <span className="font-semibold text-sm text-ink-900">Notifications</span>
-                      <button
-                        onClick={() => setBellOpen(false)}
-                        className="text-xs text-brand-600 hover:text-brand-700 font-medium"
-                      >
-                        Dismiss
-                      </button>
-                    </div>
-                    <div className="p-6 text-center">
-                      <div className="w-12 h-12 rounded-2xl bg-ink-100 flex items-center justify-center mx-auto mb-3">
-                        <Bell className="w-6 h-6 text-ink-400" />
-                      </div>
-                      <p className="text-sm font-medium text-ink-900">You're all caught up!</p>
-                      <p className="text-xs text-ink-500 mt-1">No new notifications right now.</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Notifications dropdown */}
+              <NotificationDropdown />
 
               {/* User avatar dropdown button */}
               <div className="relative">

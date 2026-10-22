@@ -65,7 +65,7 @@ button {
 }
 
 .mesh-bg {
-  background-image: radial-gradient(circle at top left, rgba(22, 176, 121, 0.3), transparent 35%), radial-gradient(circle at bottom right, rgba(6, 165, 241, 0.25), transparent 35%);
+  background-image: radial-gradient(circle at top left, rgba(124, 58, 237, 0.25), transparent 35%), radial-gradient(circle at bottom right, rgba(99, 102, 241, 0.2), transparent 35%);
 }
 
 @layer components {

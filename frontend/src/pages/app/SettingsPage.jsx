@@ -598,7 +598,7 @@ export default function SettingsPage() {
               <div className="w-full h-24 rounded-xl border border-gray-200 !bg-[#ffffff] p-2.5 mb-3 flex flex-col gap-1.5 shadow-sm overflow-hidden pointer-events-none">
                 <div className="flex items-center justify-between pb-1.5 border-b !border-gray-100">
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full !bg-emerald-500" />
+                    <div className="w-2 h-2 rounded-full !bg-violet-500" />
                     <div className="w-12 h-2 rounded !bg-gray-200" />
                   </div>
                   <div className="w-4 h-4 rounded-full !bg-amber-100 flex items-center justify-center">
@@ -606,7 +606,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-1.5 flex-1">
-                  <div className="rounded !bg-emerald-50 border !border-emerald-100" />
+                  <div className="rounded !bg-violet-50 border !border-violet-100" />
                   <div className="rounded !bg-sky-50 border !border-sky-100" />
                   <div className="rounded !bg-amber-50 border !border-amber-100" />
                 </div>
@@ -665,7 +665,7 @@ export default function SettingsPage() {
               <div className="w-full h-24 rounded-xl border !border-gray-800 !bg-[#0f131f] p-2.5 mb-3 flex flex-col gap-1.5 shadow-sm overflow-hidden pointer-events-none">
                 <div className="flex items-center justify-between pb-1.5 border-b !border-gray-800/80">
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full !bg-emerald-400" />
+                    <div className="w-2 h-2 rounded-full !bg-violet-400" />
                     <div className="w-12 h-2 rounded !bg-gray-700" />
                   </div>
                   <div className="w-4 h-4 rounded-full !bg-indigo-950/80 flex items-center justify-center">
@@ -673,7 +673,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-1.5 flex-1">
-                  <div className="rounded !bg-emerald-950/40 border !border-emerald-800/40" />
+                  <div className="rounded !bg-violet-950/40 border !border-violet-800/40" />
                   <div className="rounded !bg-sky-950/40 border !border-sky-800/40" />
                   <div className="rounded !bg-amber-950/40 border !border-amber-800/40" />
                 </div>
@@ -893,8 +893,8 @@ export default function SettingsPage() {
               <>
                 {/* Modal Header */}
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                    <Shield className="w-5 h-5 text-emerald-600" />
+                  <div className="w-11 h-11 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center shrink-0">
+                    <Shield className="w-5 h-5 text-violet-600" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold font-display text-gray-900">Verify Your Identity</h3>
@@ -905,8 +905,8 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Account email pill */}
-                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100 text-xs text-emerald-900">
-                  <Mail className="w-4 h-4 text-emerald-600 shrink-0" />
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-violet-50/70 border border-violet-100 text-xs text-violet-900">
+                  <Mail className="w-4 h-4 text-violet-600 shrink-0" />
                   <span className="font-medium font-mono truncate">{user?.email}</span>
                 </div>
 
@@ -937,8 +937,8 @@ export default function SettingsPage() {
                           disabled={pwLoading}
                           className={`w-10 h-12 text-center text-lg font-bold rounded-xl border transition-all outline-none font-mono ${
                             d
-                              ? "border-emerald-500 bg-emerald-50/40 text-emerald-950 ring-2 ring-emerald-100"
-                              : "border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                              ? "border-violet-500 bg-violet-50/40 text-violet-950 ring-2 ring-violet-100"
+                              : "border-gray-200 bg-white text-gray-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
                           }`}
                         />
                       ))}
@@ -952,7 +952,7 @@ export default function SettingsPage() {
                         type="button"
                         onClick={handleResendPasswordOtp}
                         disabled={pwLoading}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-600 hover:text-violet-700 hover:underline cursor-pointer"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                         <span>Resend Code</span>
@@ -977,7 +977,7 @@ export default function SettingsPage() {
                     <Button
                       type="submit"
                       disabled={pwLoading || pwOtp.join("").length !== 6}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                      className="bg-violet-600 hover:bg-violet-700 text-white"
                     >
                       {pwLoading ? "Verifying…" : "Verify Code"}
                     </Button>
@@ -991,8 +991,8 @@ export default function SettingsPage() {
               <>
                 {/* Modal Header */}
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                    <Lock className="w-5 h-5 text-emerald-600" />
+                  <div className="w-11 h-11 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center shrink-0">
+                    <Lock className="w-5 h-5 text-violet-600" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold font-display text-gray-900">Set New Password</h3>
@@ -1003,8 +1003,8 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Verified badge */}
-                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-800">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-violet-50 border border-violet-200 text-xs font-semibold text-violet-800">
+                  <CheckCircle2 className="w-4 h-4 text-violet-600 shrink-0" />
                   <span>Email verified: <span className="font-mono font-bold">{user?.email}</span></span>
                 </div>
 
@@ -1028,7 +1028,7 @@ export default function SettingsPage() {
                       placeholder="Enter new password"
                       required
                       autoFocus
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm text-gray-900 transition"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none text-sm text-gray-900 transition"
                     />
 
                     {/* Password rule hints */}
@@ -1036,8 +1036,8 @@ export default function SettingsPage() {
                       {passwordRules.map((rule) => {
                         const passed = rule.test(newPassword);
                         return (
-                          <div key={rule.id} className={cn("flex items-center gap-1.5 text-[11px] font-medium", passed ? "text-emerald-600" : "text-gray-400")}>
-                            <Check className={cn("w-3 h-3 shrink-0", passed ? "text-emerald-600" : "text-gray-300")} />
+                          <div key={rule.id} className={cn("flex items-center gap-1.5 text-[11px] font-medium", passed ? "text-violet-600" : "text-gray-400")}>
+                            <Check className={cn("w-3 h-3 shrink-0", passed ? "text-violet-600" : "text-gray-300")} />
                             <span>{rule.label}</span>
                           </div>
                         );
@@ -1056,7 +1056,7 @@ export default function SettingsPage() {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Re-enter new password"
                       required
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm text-gray-900 transition"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none text-sm text-gray-900 transition"
                     />
                   </div>
 
@@ -1073,7 +1073,7 @@ export default function SettingsPage() {
                     <Button
                       type="submit"
                       disabled={pwLoading || !newPassword || !confirmPassword}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                      className="bg-violet-600 hover:bg-violet-700 text-white"
                     >
                       {pwLoading ? "Updating…" : "Update Password"}
                     </Button>
@@ -1100,8 +1100,8 @@ export default function SettingsPage() {
             {emailStep === "input" ? (
               <>
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                    <Mail className="w-5 h-5 text-emerald-600" />
+                  <div className="w-11 h-11 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center shrink-0">
+                    <Mail className="w-5 h-5 text-violet-600" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold font-display text-gray-900">Update Email Address</h3>
@@ -1140,7 +1140,7 @@ export default function SettingsPage() {
                       placeholder="Enter new email address"
                       required
                       autoFocus
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm text-gray-900 transition"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none text-sm text-gray-900 transition"
                     />
                   </div>
 
@@ -1156,7 +1156,7 @@ export default function SettingsPage() {
                     <Button
                       type="submit"
                       disabled={emailLoading || !newEmail}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                      className="bg-violet-600 hover:bg-violet-700 text-white"
                     >
                       {emailLoading ? "Sending Code…" : "Send Verification Code"}
                     </Button>
@@ -1166,8 +1166,8 @@ export default function SettingsPage() {
             ) : (
               <>
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                    <Shield className="w-5 h-5 text-emerald-600" />
+                  <div className="w-11 h-11 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center shrink-0">
+                    <Shield className="w-5 h-5 text-violet-600" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold font-display text-gray-900">Verify New Email</h3>
@@ -1203,8 +1203,8 @@ export default function SettingsPage() {
                           disabled={emailLoading}
                           className={`w-10 h-12 text-center text-lg font-bold rounded-xl border transition-all outline-none font-mono ${
                             d
-                              ? "border-emerald-500 bg-emerald-50/40 text-emerald-950 ring-2 ring-emerald-100"
-                              : "border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                              ? "border-violet-500 bg-violet-50/40 text-violet-950 ring-2 ring-violet-100"
+                              : "border-gray-200 bg-white text-gray-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
                           }`}
                         />
                       ))}
@@ -1217,7 +1217,7 @@ export default function SettingsPage() {
                         type="button"
                         onClick={handleResendEmailChangeOtp}
                         disabled={emailLoading}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-600 hover:text-violet-700 hover:underline cursor-pointer"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                         <span>Resend Code</span>
@@ -1250,7 +1250,7 @@ export default function SettingsPage() {
                       <Button
                         type="submit"
                         disabled={emailLoading || emailOtp.join("").length !== 6}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        className="bg-violet-600 hover:bg-violet-700 text-white"
                       >
                         {emailLoading ? "Verifying…" : "Confirm & Update"}
                       </Button>

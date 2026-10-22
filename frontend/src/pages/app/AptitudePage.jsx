@@ -18,7 +18,7 @@ const aptitudeTopics = [
     id: 'percentages',
     name: 'Percentages, Ratios & Proportions',
     icon: Percent,
-    color: 'emerald',
+    color: 'violet',
     desc: 'Ratio conversions, percentage growth, mixtures & proportion problems.'
   },
   {
@@ -326,7 +326,7 @@ export default function AptitudePage() {
         {/* Header */}
         <div>
           <h1 className="font-display font-bold text-2xl sm:text-3xl text-gray-900 flex items-center gap-3">
-            <Calculator className="w-8 h-8 text-emerald-600" />
+            <Calculator className="w-8 h-8 text-violet-600" />
             Quantitative Aptitude & Reasoning
           </h1>
           <p className="text-gray-600 text-sm mt-1">
@@ -357,11 +357,11 @@ export default function AptitudePage() {
                 className={cn(
                   'p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3 cursor-pointer',
                   mode === 'practice'
-                    ? 'border-emerald-600 bg-emerald-50/70 shadow-sm'
+                    ? 'border-violet-600 bg-violet-50/70 shadow-sm'
                     : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                 )}
               >
-                <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0', mode === 'practice' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-500')}>
+                <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0', mode === 'practice' ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-500')}>
                   <BookOpen className="w-5 h-5" />
                 </div>
                 <div>
@@ -376,11 +376,11 @@ export default function AptitudePage() {
                 className={cn(
                   'p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3 cursor-pointer',
                   mode === 'timed'
-                    ? 'border-emerald-600 bg-emerald-50/70 shadow-sm'
+                    ? 'border-violet-600 bg-violet-50/70 shadow-sm'
                     : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                 )}
               >
-                <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0', mode === 'timed' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-500')}>
+                <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0', mode === 'timed' ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-500')}>
                   <Timer className="w-5 h-5" />
                 </div>
                 <div>
@@ -411,12 +411,12 @@ export default function AptitudePage() {
                       className={cn(
                         'py-2.5 px-3 rounded-xl border text-xs font-semibold transition text-center',
                         isSelected
-                          ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm'
+                          ? 'border-violet-600 bg-violet-600 text-white shadow-sm'
                           : 'border-gray-200 text-gray-700 hover:bg-gray-50'
                       )}
                     >
                       <div>{cfg.label}</div>
-                      <div className={cn('text-[10px] font-normal mt-0.5', isSelected ? 'text-emerald-100' : 'text-gray-400')}>
+                      <div className={cn('text-[10px] font-normal mt-0.5', isSelected ? 'text-violet-100' : 'text-gray-400')}>
                         {cfg.desc}
                       </div>
                     </button>
@@ -447,7 +447,7 @@ export default function AptitudePage() {
                     toast.error('Maximum limit is 20 questions per test');
                   }
                 }}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600"
+                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-violet-600/20 focus:border-violet-600"
               />
             </div>
           </div>
@@ -470,14 +470,14 @@ export default function AptitudePage() {
                     className={cn(
                       'p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3.5 cursor-pointer relative overflow-hidden',
                       isSelected
-                        ? 'border-emerald-600 bg-emerald-50/70 shadow-sm'
+                        ? 'border-violet-600 bg-violet-50/70 shadow-sm'
                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
                     )}
                   >
                     <div
                       className={cn(
                         'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5',
-                        isSelected ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-600'
+                        isSelected ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-600'
                       )}
                     >
                       <Icon className="w-5 h-5" />
@@ -496,12 +496,12 @@ export default function AptitudePage() {
         {/* Start Action Bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between bg-white border border-gray-200 rounded-2xl p-5 shadow-sm gap-4">
           <div className="flex items-center gap-3 text-sm text-gray-600">
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 font-bold text-xs flex-shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-violet-50 border border-violet-200 flex items-center justify-center text-violet-700 font-bold text-xs flex-shrink-0">
               ⏱️
             </div>
             <div>
               <p className="font-semibold text-gray-900 text-xs uppercase tracking-wider">
-                Suggested Total Time: <span className="text-emerald-700 font-bold text-sm">{suggestedMinutes || 0} Minutes</span>
+                Suggested Total Time: <span className="text-violet-700 font-bold text-sm">{suggestedMinutes || 0} Minutes</span>
               </p>
               <p className="text-xs text-gray-500">
                 Topic: <strong>{activeTopicObj?.name || 'None selected'}</strong> • {parsedCount || 0} Qs ({difficulty || 'None'} mode)
@@ -512,7 +512,7 @@ export default function AptitudePage() {
           <Button
             size="lg"
             onClick={handleStartAptitude}
-            className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20"
+            className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700 text-white px-8 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-md shadow-violet-600/20"
           >
             <Play className="w-4 h-4 fill-current" />
             <span>Start Aptitude Test</span>
@@ -526,14 +526,14 @@ export default function AptitudePage() {
   if (stage === 'loading') {
     return (
       <div className="max-w-2xl mx-auto my-16 text-center space-y-6 animate-fade-in">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-emerald-100 text-emerald-600 shadow-inner">
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-violet-100 text-violet-600 shadow-inner">
           <Calculator className="w-10 h-10 animate-bounce" />
         </div>
         <div className="space-y-2">
           <h2 className="font-display font-bold text-2xl text-gray-900">
             Generating Unique Aptitude Questions
           </h2>
-          <p className="text-emerald-700 font-medium text-sm max-w-md mx-auto">
+          <p className="text-violet-700 font-medium text-sm max-w-md mx-auto">
             {loadingMsg}
           </p>
         </div>
@@ -554,7 +554,7 @@ export default function AptitudePage() {
         <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg">
+              <span className="text-xs font-bold text-violet-800 bg-violet-100 px-2.5 py-1 rounded-lg">
                 Question {currentIdx + 1} of {questions.length}
               </span>
               <span className="text-xs text-gray-500 hidden sm:inline-block">
@@ -569,7 +569,7 @@ export default function AptitudePage() {
                   'flex items-center gap-2 px-3 py-1 rounded-xl text-xs font-bold font-mono border',
                   remainingSeconds < 60
                     ? 'bg-red-50 text-red-700 border-red-200 animate-pulse'
-                    : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-violet-50 text-violet-800 border-violet-200'
                 )}
               >
                 <Clock className="w-3.5 h-3.5" />
@@ -578,7 +578,7 @@ export default function AptitudePage() {
                 </span>
               </div>
             ) : (
-              <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
+              <span className="text-xs font-semibold text-violet-700 bg-violet-50 border border-violet-200 px-2.5 py-1 rounded-lg">
                 Practice Mode (Untimed)
               </span>
             )}
@@ -590,7 +590,7 @@ export default function AptitudePage() {
         {/* Question Card */}
         <Card className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-6">
           <div className="space-y-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-md">
+            <span className="text-xs font-bold uppercase tracking-wider text-violet-700 bg-violet-50 border border-violet-200 px-2.5 py-0.5 rounded-md">
               Problem {currentIdx + 1}
             </span>
             <h3 className="text-gray-900 font-semibold text-base sm:text-lg leading-relaxed pt-1">
@@ -610,14 +610,14 @@ export default function AptitudePage() {
                   className={cn(
                     'w-full p-4 rounded-xl border-2 text-left transition-all flex items-center gap-3.5 cursor-pointer',
                     isSelected
-                      ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-medium shadow-sm'
+                      ? 'border-violet-600 bg-violet-50 text-violet-900 font-medium shadow-sm'
                       : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-800'
                   )}
                 >
                   <span
                     className={cn(
                       'w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0 transition',
-                      isSelected ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-600'
+                      isSelected ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-600'
                     )}
                   >
                     {optKey}
@@ -639,16 +639,16 @@ export default function AptitudePage() {
                     [currentIdx]: !prev[currentIdx]
                   }))
                 }
-                className="inline-flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition"
+                className="inline-flex items-center gap-2 text-xs font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 px-3 py-1.5 rounded-lg transition"
               >
-                <Lightbulb className="w-3.5 h-3.5 text-emerald-600" />
+                <Lightbulb className="w-3.5 h-3.5 text-violet-600" />
                 <span>{showExplanationMap[currentIdx] ? 'Hide Solution' : 'Show Step-by-Step Explanation'}</span>
               </button>
 
               {showExplanationMap[currentIdx] && (
                 <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-xl space-y-1.5 text-xs text-amber-950 animate-fade-in">
                   <p className="font-bold flex items-center gap-1.5 text-amber-900">
-                    <Check className="w-4 h-4 text-emerald-600" />
+                    <Check className="w-4 h-4 text-violet-600" />
                     Correct Option: Option {currentQ.correct_option}
                   </p>
                   <p className="leading-relaxed">{currentQ.explanation}</p>
@@ -676,7 +676,7 @@ export default function AptitudePage() {
           {currentIdx < questions.length - 1 ? (
             <Button
               onClick={() => setCurrentIdx((prev) => prev + 1)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-5 font-semibold flex items-center gap-2"
+              className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl px-5 font-semibold flex items-center gap-2"
             >
               <span>Next</span>
               <ChevronRight className="w-4 h-4" />
@@ -684,7 +684,7 @@ export default function AptitudePage() {
           ) : (
             <Button
               onClick={finishTest}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6 font-semibold flex items-center gap-2 shadow-sm"
+              className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl px-6 font-semibold flex items-center gap-2 shadow-sm"
             >
               <span>Submit Aptitude Test</span>
               <Check className="w-4 h-4" />
@@ -706,7 +706,7 @@ export default function AptitudePage() {
     <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
       {/* Header Summary */}
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 mb-1 shadow-sm">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-violet-100 text-violet-600 mb-1 shadow-sm">
           <Award className="w-8 h-8" />
         </div>
         <h1 className="font-display font-bold text-2xl sm:text-3xl text-gray-900">
@@ -745,7 +745,7 @@ export default function AptitudePage() {
           </Button>
           <Button
             onClick={() => navigate('/app/history')}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl flex items-center gap-2"
+            className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl flex items-center gap-2"
           >
             <FileText className="w-4 h-4" />
             <span>View All History</span>
@@ -756,7 +756,7 @@ export default function AptitudePage() {
       {/* Detailed Solution Breakdown List */}
       <div className="space-y-4">
         <h2 className="font-display font-semibold text-lg text-gray-900 flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-emerald-600" />
+          <BookOpen className="w-5 h-5 text-violet-600" />
           Detailed Solution Breakdown ({questions.length} Problems)
         </h2>
 
@@ -768,7 +768,7 @@ export default function AptitudePage() {
             <Card key={idx} className="p-5 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <span className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  <span className="w-7 h-7 rounded-lg bg-violet-100 text-violet-800 flex items-center justify-center text-xs font-bold flex-shrink-0">
                     {idx + 1}
                   </span>
                   <p className="text-sm font-semibold text-gray-900 leading-relaxed pt-0.5">
@@ -815,7 +815,7 @@ export default function AptitudePage() {
               {/* Step by step formula & explanation */}
               <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 text-xs text-gray-800 space-y-1">
                 <p className="font-bold text-gray-900 flex items-center gap-1.5">
-                  <Lightbulb className="w-4 h-4 text-emerald-600" />
+                  <Lightbulb className="w-4 h-4 text-violet-600" />
                   Step-by-Step Explanation:
                 </p>
                 <p className="leading-relaxed">{q.explanation}</p>

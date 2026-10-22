@@ -6,7 +6,6 @@ import AppLayout from './components/layout/AppLayout';
 import LandingPage from './pages/public/LandingPage';
 import AboutPage from './pages/public/AboutPage';
 import FeaturesPage from './pages/public/FeaturesPage';
-import ContactPage from './pages/public/ContactPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
@@ -28,7 +27,6 @@ function PublicApp() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/features" element={<FeaturesPage />} />
-      <Route path="/contact" element={<ContactPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify-otp" element={<VerifyOtpPage />} />
@@ -42,7 +40,7 @@ function AppRoutes() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-ink-50">Loading…</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-ink-950 text-white">Loading…</div>;
   }
 
   return (
@@ -50,7 +48,6 @@ function AppRoutes() {
       <Route path="/" element={user ? <Navigate to="/app/dashboard" replace /> : <LandingPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/features" element={<FeaturesPage />} />
-      <Route path="/contact" element={<ContactPage />} />
       <Route path="/login" element={user ? <Navigate to="/app/dashboard" replace /> : <LoginPage />} />
       <Route path="/register" element={user ? <Navigate to="/app/dashboard" replace /> : <RegisterPage />} />
       <Route path="/verify-otp" element={user ? <Navigate to="/app/dashboard" replace /> : <VerifyOtpPage />} />

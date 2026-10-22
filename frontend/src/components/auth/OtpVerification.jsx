@@ -186,7 +186,7 @@ export default function OtpVerification({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-emerald-600 transition mb-6 group cursor-pointer"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-ink-400 hover:text-white transition mb-6 group cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
           <span>{actionType === 'login' ? 'Back to Sign In' : 'Back to Sign Up'}</span>
@@ -195,36 +195,36 @@ export default function OtpVerification({
 
       {/* Header icon badge */}
       <div className="flex items-center justify-center mb-6">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-teal-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-600 shadow-md shadow-emerald-500/10 animate-scale-in">
-          <ShieldCheck className="w-8 h-8 text-emerald-600" />
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-violet-500/20 to-purple-500/10 border border-violet-500/30 flex items-center justify-center text-violet-400 shadow-md shadow-violet-500/10 animate-scale-in">
+          <ShieldCheck className="w-8 h-8 text-violet-400" />
         </div>
       </div>
 
       {/* Title & Email Display */}
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 tracking-tight font-display">
+        <h2 className="text-2xl font-bold text-white tracking-tight font-display">
           {title}
         </h2>
-        <p className="text-gray-500 text-sm mt-1.5 leading-relaxed">
+        <p className="text-ink-400 text-sm mt-1.5 leading-relaxed">
           {subtitle}
         </p>
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 mt-2.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-medium">
-          <Mail className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 mt-2.5 rounded-full bg-violet-950/60 border border-violet-800/80 text-violet-300 text-xs font-medium">
+          <Mail className="w-3.5 h-3.5 text-violet-400 shrink-0" />
           <span className="font-semibold break-all">{email}</span>
         </div>
       </div>
 
       {/* Alert Messages */}
       {errorMsg && (
-        <div className="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-start gap-2.5 animate-fade-in">
-          <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
+        <div className="mb-5 p-3.5 rounded-xl bg-red-950/60 border border-red-800 text-red-300 text-xs font-semibold flex items-start gap-2.5 animate-fade-in">
+          <AlertCircle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" />
           <div className="flex-1 leading-snug">{errorMsg}</div>
         </div>
       )}
 
       {successMsg && (
-        <div className="mb-5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold flex items-start gap-2.5 animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 mt-0.5" />
+        <div className="mb-5 p-3.5 rounded-xl bg-violet-950/60 border border-violet-800 text-violet-300 text-xs font-semibold flex items-start gap-2.5 animate-fade-in">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-violet-400 mt-0.5" />
           <div className="flex-1 leading-snug">{successMsg}</div>
         </div>
       )}
@@ -232,7 +232,7 @@ export default function OtpVerification({
       {/* Verification Form */}
       <form onSubmit={handleVerifySubmit} className="space-y-6">
         <div>
-          <label className="block text-center text-xs font-semibold uppercase tracking-wider text-gray-600 mb-3">
+          <label className="block text-center text-xs font-semibold uppercase tracking-wider text-ink-300 mb-3">
             Enter 6-Digit Code
           </label>
 
@@ -251,15 +251,15 @@ export default function OtpVerification({
                 disabled={loading}
                 className={`w-11 h-13 sm:w-13 sm:h-14 text-center text-xl sm:text-2xl font-bold rounded-xl border transition-all outline-none font-mono ${
                   digit
-                    ? 'border-emerald-500 bg-emerald-50/40 text-emerald-950 ring-2 ring-emerald-100'
-                    : 'border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100'
+                    ? 'border-violet-500 bg-violet-950/50 text-white ring-2 ring-violet-500/30'
+                    : 'border-ink-700 bg-ink-950 text-white focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20'
                 } disabled:opacity-50`}
               />
             ))}
           </div>
 
-          <p className="text-center text-xs text-gray-400 mt-3">
-            Code expires in <span className="font-semibold text-gray-600">10 minutes</span>. Check your inbox &amp; spam folder.
+          <p className="text-center text-xs text-ink-400 mt-3">
+            Code expires in <span className="font-semibold text-ink-200">10 minutes</span>. Check your inbox &amp; spam folder.
           </p>
         </div>
 
@@ -267,7 +267,7 @@ export default function OtpVerification({
         <button
           type="submit"
           disabled={loading || digits.join('').length !== 6}
-          className="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-sm shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="w-full py-3.5 px-4 rounded-xl bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white font-semibold text-sm shadow-lg shadow-violet-600/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           {loading ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -278,22 +278,22 @@ export default function OtpVerification({
       </form>
 
       {/* Resend Section */}
-      <div className="mt-6 text-center pt-5 border-t border-gray-100">
-        <p className="text-xs text-gray-500 mb-2">Didn't receive the verification code?</p>
+      <div className="mt-6 text-center pt-5 border-t border-ink-800">
+        <p className="text-xs text-ink-400 mb-2">Didn't receive the verification code?</p>
         {canResend ? (
           <button
             type="button"
             onClick={handleResend}
             disabled={resending}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:underline transition cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-400 hover:text-violet-300 hover:underline transition cursor-pointer disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${resending ? 'animate-spin' : ''}`} />
             <span>{resending ? 'Sending code…' : 'Resend Code'}</span>
           </button>
         ) : (
-          <span className="inline-flex items-center gap-1 text-xs text-gray-400 font-medium">
+          <span className="inline-flex items-center gap-1 text-xs text-ink-400 font-medium">
             Resend available in{' '}
-            <span className="font-semibold text-gray-600 font-mono">
+            <span className="font-semibold text-white font-mono">
               {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
             </span>
           </span>

@@ -373,7 +373,7 @@ export default function MockInterviewPage() {
         {/* Header */}
         <div>
           <h1 className="font-display font-bold text-2xl sm:text-3xl text-gray-900 flex items-center gap-3">
-            <Brain className="w-8 h-8 text-emerald-600" />
+            <Brain className="w-8 h-8 text-violet-600" />
             AI Mock Interview Setup
           </h1>
           <p className="text-gray-600 text-sm mt-1">
@@ -387,7 +387,7 @@ export default function MockInterviewPage() {
             {/* Preferred Role */}
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <UserCheck className="w-4 h-4 text-emerald-600" />
+                <UserCheck className="w-4 h-4 text-violet-600" />
                 Preferred Role <span className="text-red-500">*</span>
               </label>
               <input
@@ -395,7 +395,7 @@ export default function MockInterviewPage() {
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 placeholder="e.g. Full Stack Developer, Backend Engineer..."
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm text-gray-900 transition"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none text-sm text-gray-900 transition"
               />
               <p className="text-[11px] text-gray-400 mt-1">Role provides domain context for scenario-based questions.</p>
             </div>
@@ -403,7 +403,7 @@ export default function MockInterviewPage() {
             {/* Primary Skill */}
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <Layers className="w-4 h-4 text-emerald-600" />
+                <Layers className="w-4 h-4 text-violet-600" />
                 Primary Skill / Technology <span className="text-red-500">*</span>
               </label>
               <input
@@ -411,7 +411,7 @@ export default function MockInterviewPage() {
                 value={skill}
                 onChange={(e) => setSkill(e.target.value)}
                 placeholder="e.g. System Design, React, Python..."
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm text-gray-900 font-medium transition"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none text-sm text-gray-900 font-medium transition"
               />
               <p className="text-[11px] text-gray-400 mt-1">All questions will test technical depth in this skill.</p>
             </div>
@@ -432,7 +432,7 @@ export default function MockInterviewPage() {
                     className={cn(
                       'py-2.5 px-3 rounded-xl text-xs font-semibold transition border text-center',
                       difficulty === d
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                        ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
                         : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
                     )}
                   >
@@ -461,7 +461,7 @@ export default function MockInterviewPage() {
                     if (!isNaN(parsed)) setTotalQuestions(Math.max(1, Math.min(15, parsed)));
                   }
                 }}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm font-semibold text-gray-900 transition"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none text-sm font-semibold text-gray-900 transition"
               />
             </div>
           </div>
@@ -478,7 +478,7 @@ export default function MockInterviewPage() {
                     onClick={() => setRole(r)}
                     className={cn(
                       'px-3 py-1.5 rounded-lg text-xs font-medium transition border',
-                      role === r ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-bold' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                      role === r ? 'bg-violet-100 text-violet-800 border-violet-300 font-bold' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
                     )}
                   >{r}</button>
                 ))}
@@ -494,7 +494,7 @@ export default function MockInterviewPage() {
                     onClick={() => setSkill(s)}
                     className={cn(
                       'px-3 py-1.5 rounded-lg text-xs font-medium transition border',
-                      skill.toLowerCase() === s.toLowerCase() ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-bold' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                      skill.toLowerCase() === s.toLowerCase() ? 'bg-violet-100 text-violet-800 border-violet-300 font-bold' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
                     )}
                   >{s}</button>
                 ))}
@@ -506,13 +506,13 @@ export default function MockInterviewPage() {
         {/* Start CTA */}
         <div className="flex items-center justify-between bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
           <div className="flex items-center gap-2.5 text-sm text-gray-600">
-            <Clock className="w-4 h-4 text-emerald-600" />
+            <Clock className="w-4 h-4 text-violet-600" />
             <span>{totalQuestions ? `${totalQuestions} Questions` : 'Select parameters'} • Adaptive AI Interview</span>
           </div>
           <Button
             size="lg"
             onClick={handleStartInterview}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-7 py-3 rounded-xl font-semibold flex items-center gap-2 shadow-md shadow-emerald-600/20"
+            className="bg-violet-600 hover:bg-violet-700 text-white px-7 py-3 rounded-xl font-semibold flex items-center gap-2 shadow-md shadow-violet-600/20"
           >
             <Play className="w-4 h-4" />
             <span>Start Mock Interview</span>
@@ -526,12 +526,12 @@ export default function MockInterviewPage() {
   if (stage === 'loading') {
     return (
       <div className="max-w-2xl mx-auto my-16 text-center space-y-6 animate-fade-in">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-emerald-100 text-emerald-600 shadow-inner">
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-violet-100 text-violet-600 shadow-inner">
           <RefreshCw className="w-10 h-10 animate-spin" />
         </div>
         <div className="space-y-2">
           <h2 className="font-display font-bold text-2xl text-gray-900">Generating Dynamic Question</h2>
-          <p className="text-emerald-700 font-medium text-sm">{loadingMsg}</p>
+          <p className="text-violet-700 font-medium text-sm">{loadingMsg}</p>
           <p className="text-xs text-gray-400 max-w-sm mx-auto">
             AI is tailoring unique technical questions for <strong>{skill}</strong> ({role || 'General'}).
           </p>
@@ -557,12 +557,12 @@ export default function MockInterviewPage() {
                 <Badge color="brand">{difficulty}</Badge>
               </div>
               <p className="text-xs text-gray-500 mt-0.5">
-                Skill: <strong className="text-emerald-700">{skill}</strong> {role ? `• Role: ${role}` : ''}
+                Skill: <strong className="text-violet-700">{skill}</strong> {role ? `• Role: ${role}` : ''}
               </p>
             </div>
             {/* Timer */}
             <div className="flex items-center gap-2 px-3.5 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-bold text-gray-700">
-              <Clock className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+              <Clock className="w-3.5 h-3.5 text-violet-600 animate-pulse" />
               <span>{formatDuration(elapsedSeconds)}</span>
             </div>
           </div>
@@ -570,29 +570,29 @@ export default function MockInterviewPage() {
         </div>
 
         {/* AI Question Card (HR-style with speaking avatar & replay button) */}
-        <Card className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm border-l-4 border-l-emerald-600">
+        <Card className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm border-l-4 border-l-violet-600">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3.5">
               <div
                 className={cn(
                   'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-white transition-all',
-                  isSpeakingQuestion ? 'bg-emerald-500 animate-bounce shadow-lg shadow-emerald-200' : 'bg-emerald-600 shadow-sm'
+                  isSpeakingQuestion ? 'bg-violet-500 animate-bounce shadow-lg shadow-violet-200' : 'bg-violet-600 shadow-sm'
                 )}
               >
                 <Brain className="w-5 h-5" />
               </div>
               <div className="space-y-1 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
+                  <p className="text-xs font-bold text-violet-700 uppercase tracking-wider">
                     AI Technical Interviewer
                   </p>
                   {isSpeakingQuestion && (
-                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full animate-pulse">
+                    <span className="text-[10px] bg-violet-100 text-violet-800 font-bold px-2 py-0.5 rounded-full animate-pulse">
                       Speaking...
                     </span>
                   )}
                   {currentFocusConcept && (
-                    <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md font-medium ml-auto">
+                    <span className="text-xs bg-violet-50 text-violet-800 border border-violet-200 px-2 py-0.5 rounded-md font-medium ml-auto">
                       {currentFocusConcept}
                     </span>
                   )}
@@ -606,7 +606,7 @@ export default function MockInterviewPage() {
             <button
               type="button"
               onClick={() => speakQuestionVoice(currentQuestionText)}
-              className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition flex-shrink-0"
+              className="p-2 rounded-xl bg-violet-50 hover:bg-violet-100 text-violet-700 transition flex-shrink-0"
               title="Replay question voice"
             >
               <Play className="w-4 h-4 fill-current" />
@@ -625,7 +625,7 @@ export default function MockInterviewPage() {
                 'w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer shadow-lg',
                 isRecording
                   ? 'bg-red-500 animate-pulse scale-110 shadow-red-200'
-                  : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20 hover:scale-105'
+                  : 'bg-violet-600 hover:bg-violet-700 shadow-violet-600/20 hover:scale-105'
               )}
             >
               {isRecording ? <Square className="w-8 h-8 text-white" /> : <Mic className="w-8 h-8 text-white" />}
@@ -662,7 +662,7 @@ export default function MockInterviewPage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Edit3 className="w-3.5 h-3.5 text-emerald-600" />
+                <Edit3 className="w-3.5 h-3.5 text-violet-600" />
                 <span>Spoken Response & Editable Text</span>
               </label>
               <span className="text-xs text-gray-400">
@@ -673,7 +673,7 @@ export default function MockInterviewPage() {
               value={currentAnswerText}
               onChange={(e) => setCurrentAnswerText(e.target.value)}
               rows={5}
-              className="w-full p-4 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm text-gray-900 leading-relaxed transition resize-none"
+              className="w-full p-4 rounded-xl border border-gray-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none text-sm text-gray-900 leading-relaxed transition resize-none"
               placeholder="Your voice response will auto-fill here. You can also type or edit your answer..."
             />
           </div>
@@ -696,7 +696,7 @@ export default function MockInterviewPage() {
               <Button
                 type="button"
                 onClick={() => processAnswerSubmission(currentAnswerText, false)}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold px-5 flex items-center gap-2 shadow-sm"
+                className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-semibold px-5 flex items-center gap-2 shadow-sm"
               >
                 {currentQuestionNum < totalQuestions ? (
                   <><span>Submit & Next</span><ArrowRight className="w-4 h-4" /></>
@@ -720,7 +720,7 @@ export default function MockInterviewPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 mb-1 shadow-sm">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-violet-100 text-violet-600 mb-1 shadow-sm">
           <Award className="w-8 h-8" />
         </div>
         <h1 className="font-display font-bold text-2xl sm:text-3xl text-gray-900">Interview Completed!</h1>
@@ -749,7 +749,7 @@ export default function MockInterviewPage() {
           </Button>
           <Button
             onClick={() => navigate('/app/history')}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl flex items-center gap-2"
+            className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl flex items-center gap-2"
           >
             <FileText className="w-4 h-4" />
             <span>View All History</span>
@@ -770,14 +770,14 @@ export default function MockInterviewPage() {
             <Card key={idx} className="p-5 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-3">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <span className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  <span className="w-7 h-7 rounded-lg bg-violet-100 text-violet-800 flex items-center justify-center text-xs font-bold flex-shrink-0">
                     {idx + 1}
                   </span>
                   <p className="text-sm font-semibold text-gray-900">{qText}</p>
                 </div>
                 <span className={cn(
                   'px-3 py-1 rounded-full text-xs font-bold flex-shrink-0',
-                  score >= 70 ? 'bg-emerald-100 text-emerald-800' : score >= 40 ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'
+                  score >= 70 ? 'bg-violet-100 text-violet-800' : score >= 40 ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'
                 )}>
                   {score}% {evalObj.verdict ? `(${evalObj.verdict})` : ''}
                 </span>

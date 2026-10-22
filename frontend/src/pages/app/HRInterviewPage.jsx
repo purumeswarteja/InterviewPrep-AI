@@ -21,7 +21,7 @@ const hrTopicsList = [
     id: 'introduction',
     name: 'Introduction',
     icon: UserCheck,
-    badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    badgeColor: 'bg-violet-100 text-violet-800 border-violet-200',
     desc: 'Professional background, resume overview, and key achievements.',
     sampleQuestions: [
       'Tell me about yourself, your professional background, and your key technical achievements.',
@@ -104,7 +104,7 @@ const hrTopicsList = [
     id: 'full-hr',
     name: 'Full HR Round (All Topics)',
     icon: Layers,
-    badgeColor: 'bg-emerald-600 text-white border-emerald-600',
+    badgeColor: 'bg-violet-600 text-white border-violet-600',
     desc: 'Comprehensive multi-stage HR interview covering all topics.',
     sampleQuestions: [
       'Tell me about yourself, your technical background, and what drives your interest in this position.'
@@ -506,7 +506,7 @@ export default function HRInterviewPage() {
         {/* Header */}
         <div>
           <h1 className="font-display font-bold text-2xl sm:text-3xl text-gray-900 flex items-center gap-3">
-            <UserCheck className="w-8 h-8 text-emerald-600" />
+            <UserCheck className="w-8 h-8 text-violet-600" />
             HR & Behavioral Round Setup
           </h1>
           <p className="text-gray-600 text-sm mt-1">
@@ -520,7 +520,7 @@ export default function HRInterviewPage() {
             {/* Preferred Target Role (Optional) */}
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <Briefcase className="w-4 h-4 text-emerald-600" />
+                <Briefcase className="w-4 h-4 text-violet-600" />
                 Target Role / Position (Optional)
               </label>
               <input
@@ -528,7 +528,7 @@ export default function HRInterviewPage() {
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 placeholder="e.g. Full Stack Developer, Product Manager, Data Analyst..."
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm text-gray-900 transition"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none text-sm text-gray-900 transition"
               />
             </div>
 
@@ -551,7 +551,7 @@ export default function HRInterviewPage() {
                     if (!isNaN(parsed)) setTotalQuestionsInput(Math.max(1, Math.min(15, parsed)));
                   }
                 }}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm font-semibold text-gray-900 transition"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none text-sm font-semibold text-gray-900 transition"
               />
             </div>
           </div>
@@ -573,14 +573,14 @@ export default function HRInterviewPage() {
                     className={cn(
                       'p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3.5 cursor-pointer relative overflow-hidden',
                       isSelected
-                        ? 'border-emerald-600 bg-emerald-50/70 shadow-sm'
+                        ? 'border-violet-600 bg-violet-50/70 shadow-sm'
                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
                     )}
                   >
                     <div
                       className={cn(
                         'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5',
-                        isSelected ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-600'
+                        isSelected ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-600'
                       )}
                     >
                       <Icon className="w-5 h-5" />
@@ -599,7 +599,7 @@ export default function HRInterviewPage() {
         {/* Start Button & Footer */}
         <div className="flex items-center justify-between bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
           <div className="flex items-center gap-2.5 text-sm text-gray-600">
-            <Clock className="w-4 h-4 text-emerald-600" />
+            <Clock className="w-4 h-4 text-violet-600" />
             <span>
               Topic: <strong>{hrTopicsList.find(t => t.id === selectedTopicId)?.name}</strong> • {totalQuestionsInput || 5} Questions
             </span>
@@ -607,7 +607,7 @@ export default function HRInterviewPage() {
           <Button
             size="lg"
             onClick={handleStartHRRound}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-7 py-3 rounded-xl font-semibold flex items-center gap-2 shadow-md shadow-emerald-600/20"
+            className="bg-violet-600 hover:bg-violet-700 text-white px-7 py-3 rounded-xl font-semibold flex items-center gap-2 shadow-md shadow-violet-600/20"
           >
             <Play className="w-4 h-4" />
             <span>Start HR Round</span>
@@ -621,14 +621,14 @@ export default function HRInterviewPage() {
   if (stage === 'loading') {
     return (
       <div className="max-w-2xl mx-auto my-16 text-center space-y-6 animate-fade-in">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-emerald-100 text-emerald-600 shadow-inner">
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-violet-100 text-violet-600 shadow-inner">
           <RefreshCw className="w-10 h-10 animate-spin" />
         </div>
         <div className="space-y-2">
           <h2 className="font-display font-bold text-2xl text-gray-900">
             Preparing HR Behavioral Question
           </h2>
-          <p className="text-emerald-700 font-medium text-sm">
+          <p className="text-violet-700 font-medium text-sm">
             {loadingMsg}
           </p>
           <p className="text-xs text-gray-400 max-w-sm mx-auto">
@@ -670,7 +670,7 @@ export default function HRInterviewPage() {
 
             {/* Timer */}
             <div className="flex items-center gap-2 px-3.5 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-bold text-gray-700">
-              <Clock className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+              <Clock className="w-3.5 h-3.5 text-violet-600 animate-pulse" />
               <span>{formatDuration(elapsedSeconds)}</span>
             </div>
           </div>
@@ -679,28 +679,28 @@ export default function HRInterviewPage() {
         </div>
 
         {/* AI HR Question Card (Voice & Avatar Enabled) */}
-        <Card className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm border-l-4 border-l-emerald-600">
+        <Card className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm border-l-4 border-l-violet-600">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3.5">
               <div
                 className={cn(
                   'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-white transition-all',
-                  isSpeakingQuestion ? 'bg-emerald-500 animate-bounce shadow-lg shadow-emerald-200' : 'bg-emerald-600 shadow-sm'
+                  isSpeakingQuestion ? 'bg-violet-500 animate-bounce shadow-lg shadow-violet-200' : 'bg-violet-600 shadow-sm'
                 )}
               >
                 <UserCheck className="w-5 h-5" />
               </div>
               <div className="space-y-1 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
+                  <p className="text-xs font-bold text-violet-700 uppercase tracking-wider">
                     AI HR Director
                   </p>
                   {isSpeakingQuestion && (
-                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full animate-pulse">
+                    <span className="text-[10px] bg-violet-100 text-violet-800 font-bold px-2 py-0.5 rounded-full animate-pulse">
                       Speaking...
                     </span>
                   )}
-                  <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md font-medium ml-auto">
+                  <span className="text-xs bg-violet-50 text-violet-800 border border-violet-200 px-2 py-0.5 rounded-md font-medium ml-auto">
                     {activeTopicObj.name}
                   </span>
                 </div>
@@ -714,7 +714,7 @@ export default function HRInterviewPage() {
             <button
               type="button"
               onClick={() => speakQuestionVoice(currentQuestionText)}
-              className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition flex-shrink-0"
+              className="p-2 rounded-xl bg-violet-50 hover:bg-violet-100 text-violet-700 transition flex-shrink-0"
               title="Replay AI Question Voice"
             >
               <Play className="w-4 h-4 fill-current" />
@@ -733,7 +733,7 @@ export default function HRInterviewPage() {
                 'w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer shadow-lg',
                 isRecording
                   ? 'bg-red-500 animate-pulse scale-110 shadow-red-200'
-                  : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20 hover:scale-105'
+                  : 'bg-violet-600 hover:bg-violet-700 shadow-violet-600/20 hover:scale-105'
               )}
             >
               {isRecording ? <Square className="w-8 h-8 text-white" /> : <Mic className="w-8 h-8 text-white" />}
@@ -773,7 +773,7 @@ export default function HRInterviewPage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Edit3 className="w-3.5 h-3.5 text-emerald-600" />
+                <Edit3 className="w-3.5 h-3.5 text-violet-600" />
                 <span>Spoken Response & Editable Text</span>
               </label>
               <span className="text-xs text-gray-400">
@@ -785,7 +785,7 @@ export default function HRInterviewPage() {
               value={currentAnswerText}
               onChange={(e) => setCurrentAnswerText(e.target.value)}
               rows={5}
-              className="w-full p-4 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm text-gray-900 leading-relaxed transition resize-none"
+              className="w-full p-4 rounded-xl border border-gray-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none text-sm text-gray-900 leading-relaxed transition resize-none"
               placeholder="Your voice response transcript will automatically fill up here. You can also edit or type additional text..."
             />
           </div>
@@ -812,7 +812,7 @@ export default function HRInterviewPage() {
               <Button
                 type="button"
                 onClick={() => processAnswerSubmission(currentAnswerText, false)}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold px-5 flex items-center gap-2 shadow-sm"
+                className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-semibold px-5 flex items-center gap-2 shadow-sm"
               >
                 {currentQuestionNum < qCount ? (
                   <>
@@ -843,7 +843,7 @@ export default function HRInterviewPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 mb-1 shadow-sm">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-violet-100 text-violet-600 mb-1 shadow-sm">
           <UserCheck className="w-8 h-8" />
         </div>
         <h1 className="font-display font-bold text-2xl sm:text-3xl text-gray-900">
@@ -882,7 +882,7 @@ export default function HRInterviewPage() {
           </Button>
           <Button
             onClick={() => navigate('/app/history')}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl flex items-center gap-2"
+            className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl flex items-center gap-2"
           >
             <FileText className="w-4 h-4" />
             <span>View All History</span>
@@ -906,7 +906,7 @@ export default function HRInterviewPage() {
             <Card key={idx} className="p-5 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-3">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <span className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  <span className="w-7 h-7 rounded-lg bg-violet-100 text-violet-800 flex items-center justify-center text-xs font-bold flex-shrink-0">
                     {idx + 1}
                   </span>
                   <div className="space-y-1">
@@ -922,7 +922,7 @@ export default function HRInterviewPage() {
                   className={cn(
                     'px-3 py-1 rounded-full text-xs font-bold flex-shrink-0',
                     score >= 80
-                      ? 'bg-emerald-100 text-emerald-800'
+                      ? 'bg-violet-100 text-violet-800'
                       : score >= 60
                       ? 'bg-amber-100 text-amber-800'
                       : 'bg-red-100 text-red-800'
@@ -944,9 +944,9 @@ export default function HRInterviewPage() {
 
               {/* AI Evaluation */}
               {evalObj.feedback && (
-                <div className="bg-emerald-50/60 rounded-xl p-3.5 border border-emerald-100">
-                  <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                    <Check className="w-4 h-4 text-emerald-600" />
+                <div className="bg-violet-50/60 rounded-xl p-3.5 border border-violet-100">
+                  <p className="text-xs font-semibold text-violet-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                    <Check className="w-4 h-4 text-violet-600" />
                     AI HR Evaluation
                   </p>
                   <p className="text-sm text-gray-800 leading-relaxed">

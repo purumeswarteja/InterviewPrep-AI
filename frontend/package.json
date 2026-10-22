@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "framer-motion": "^12.42.2",
+    "jspdf": "^4.2.1",
     "lucide-react": "^0.344.0",
     "nodemon": "^3.1.14",
     "pdfjs-dist": "^4.8.69",

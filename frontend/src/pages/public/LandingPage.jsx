@@ -29,7 +29,7 @@ const testimonials = [
   { name: "Priya Patel", role: "Data Scientist @ Meta", quote: "The voice interview practice was a game-changer. I felt completely prepared walking into my real interviews.", avatar: "https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg?auto=compress&cs=tinysrgb&w=200" }
 ];
 function LandingPage() {
-  return /* @__PURE__ */ jsxs("div", { className: "min-h-screen bg-ink-50", children: [
+  return /* @__PURE__ */ jsxs("div", { className: "min-h-screen bg-ink-950 text-white selection:bg-brand-500 selection:text-white", children: [
     /* @__PURE__ */ jsx(PublicNavbar, {}),
     /* @__PURE__ */ jsxs("section", { className: "relative pt-32 pb-24 overflow-hidden min-h-[640px] flex items-center", children: [
       /* @__PURE__ */ jsx(
@@ -40,7 +40,7 @@ function LandingPage() {
           className: "absolute inset-0 w-full h-full object-cover"
         }
       ),
-      /* @__PURE__ */ jsx("div", { className: "absolute inset-0 bg-gradient-to-br from-ink-950/90 via-ink-950/70 to-ink-900/50" }),
+      /* @__PURE__ */ jsx("div", { className: "absolute inset-0 bg-gradient-to-br from-ink-950/95 via-ink-950/85 to-ink-900/70" }),
       /* @__PURE__ */ jsx("div", { className: "absolute inset-0 grid-pattern opacity-20" }),
       /* @__PURE__ */ jsx("div", { className: "relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full", children: /* @__PURE__ */ jsxs("div", { className: "max-w-2xl animate-fade-up", children: [
         /* @__PURE__ */ jsxs("div", { className: "inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm text-brand-300 text-sm font-medium mb-6 border border-white/10", children: [
@@ -54,7 +54,7 @@ function LandingPage() {
         ] }),
         /* @__PURE__ */ jsx("p", { className: "mt-6 text-lg text-ink-200 leading-relaxed max-w-xl", children: "Practice with AI-powered mock interviews, get instant feedback, and track your progress. The smartest way to prepare for your next career move." }),
         /* @__PURE__ */ jsxs("div", { className: "mt-8 flex flex-wrap gap-3", children: [
-          /* @__PURE__ */ jsx(Link, { to: "/register", children: /* @__PURE__ */ jsxs(Button, { size: "lg", className: "bg-brand-600 text-white hover:bg-brand-700", children: [
+          /* @__PURE__ */ jsx(Link, { to: "/register", children: /* @__PURE__ */ jsxs(Button, { size: "lg", className: "bg-brand-600 text-white hover:bg-brand-700 shadow-lg shadow-brand-600/30", children: [
             "Start Practicing Free",
             /* @__PURE__ */ jsx(ArrowRight, { className: "w-4 h-4 group-hover:translate-x-1 transition-transform" })
           ] }) }),
@@ -62,30 +62,30 @@ function LandingPage() {
         ] })
       ] }) })
     ] }),
-    /* @__PURE__ */ jsx("section", { className: "py-20 bg-white", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8", children: [
+    /* @__PURE__ */ jsx("section", { className: "py-20 bg-ink-900/80 border-y border-ink-800/80", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8", children: [
       /* @__PURE__ */ jsxs("div", { className: "text-center max-w-2xl mx-auto mb-12", children: [
-        /* @__PURE__ */ jsx("span", { className: "text-sm font-semibold text-brand-600 uppercase tracking-wider", children: "Features" }),
-        /* @__PURE__ */ jsx("h2", { className: "font-display font-bold text-3xl sm:text-4xl text-ink-950 mt-2", children: "Everything You Need to Ace Your Interview" }),
-        /* @__PURE__ */ jsx("p", { className: "mt-4 text-ink-600", children: "A complete toolkit designed to take you from anxious applicant to confident candidate." })
+        /* @__PURE__ */ jsx("span", { className: "text-sm font-semibold text-brand-400 uppercase tracking-wider", children: "Features" }),
+        /* @__PURE__ */ jsx("h2", { className: "font-display font-bold text-3xl sm:text-4xl text-white mt-2", children: "Everything You Need to Ace Your Interview" }),
+        /* @__PURE__ */ jsx("p", { className: "mt-4 text-ink-300", children: "A complete toolkit designed to take you from anxious applicant to confident candidate." })
       ] }),
-      /* @__PURE__ */ jsx("div", { className: "grid md:grid-cols-2 lg:grid-cols-4 gap-6", children: features.map((f) => /* @__PURE__ */ jsxs("div", { className: "group card-surface p-6 hover:shadow-lift hover:-translate-y-1 transition-all duration-300", children: [
-        /* @__PURE__ */ jsx("div", { className: `w-12 h-12 rounded-xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`, children: /* @__PURE__ */ jsx(f.icon, { className: "w-6 h-6 text-white" }) }),
-        /* @__PURE__ */ jsx("h3", { className: "font-display font-semibold text-lg text-ink-900", children: f.title }),
-        /* @__PURE__ */ jsx("p", { className: "text-sm text-ink-500 mt-2 leading-relaxed", children: f.desc })
+      /* @__PURE__ */ jsx("div", { className: "grid md:grid-cols-2 lg:grid-cols-4 gap-6", children: features.map((f) => /* @__PURE__ */ jsxs("div", { className: "group bg-ink-950/90 border border-ink-800/80 hover:border-brand-500/50 rounded-2xl p-6 hover:shadow-glow hover:-translate-y-1 transition-all duration-300", children: [
+        /* @__PURE__ */ jsx("div", { className: `w-12 h-12 rounded-xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-md`, children: /* @__PURE__ */ jsx(f.icon, { className: "w-6 h-6 text-white" }) }),
+        /* @__PURE__ */ jsx("h3", { className: "font-display font-semibold text-lg text-white", children: f.title }),
+        /* @__PURE__ */ jsx("p", { className: "text-sm text-ink-300 mt-2 leading-relaxed", children: f.desc })
       ] }, f.title)) })
     ] }) }),
-    /* @__PURE__ */ jsx("section", { className: "py-20 bg-ink-50", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8", children: [
+    /* @__PURE__ */ jsx("section", { className: "py-20 bg-ink-950", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8", children: [
       /* @__PURE__ */ jsxs("div", { className: "text-center max-w-2xl mx-auto mb-12", children: [
-        /* @__PURE__ */ jsx("span", { className: "text-sm font-semibold text-brand-600 uppercase tracking-wider", children: "How It Works" }),
-        /* @__PURE__ */ jsx("h2", { className: "font-display font-bold text-3xl sm:text-4xl text-ink-950 mt-2", children: "Your Path to Interview Success" })
+        /* @__PURE__ */ jsx("span", { className: "text-sm font-semibold text-brand-400 uppercase tracking-wider", children: "How It Works" }),
+        /* @__PURE__ */ jsx("h2", { className: "font-display font-bold text-3xl sm:text-4xl text-white mt-2", children: "Your Path to Interview Success" })
       ] }),
       /* @__PURE__ */ jsx("div", { className: "grid md:grid-cols-2 lg:grid-cols-4 gap-6", children: steps.map((s, i) => /* @__PURE__ */ jsxs("div", { className: "relative", children: [
-        /* @__PURE__ */ jsxs("div", { className: "card-surface p-6 h-full", children: [
-          /* @__PURE__ */ jsx("span", { className: "font-display font-bold text-4xl text-ink-200", children: s.num }),
-          /* @__PURE__ */ jsx("h3", { className: "font-display font-semibold text-lg text-ink-900 mt-3", children: s.title }),
-          /* @__PURE__ */ jsx("p", { className: "text-sm text-ink-500 mt-2 leading-relaxed", children: s.desc })
+        /* @__PURE__ */ jsxs("div", { className: "bg-ink-900/80 border border-ink-800/80 rounded-2xl p-6 h-full hover:border-brand-500/40 transition-colors", children: [
+          /* @__PURE__ */ jsx("span", { className: "font-display font-bold text-4xl text-brand-400/35", children: s.num }),
+          /* @__PURE__ */ jsx("h3", { className: "font-display font-semibold text-lg text-white mt-3", children: s.title }),
+          /* @__PURE__ */ jsx("p", { className: "text-sm text-ink-300 mt-2 leading-relaxed", children: s.desc })
         ] }),
-        i < steps.length - 1 && /* @__PURE__ */ jsx(ArrowRight, { className: "hidden lg:block absolute top-1/2 -right-4 w-6 h-6 text-ink-300" })
+        i < steps.length - 1 && /* @__PURE__ */ jsx(ArrowRight, { className: "hidden lg:block absolute top-1/2 -right-4 w-6 h-6 text-ink-600" })
       ] }, s.num)) })
     ] }) }),
     /* @__PURE__ */ jsxs("section", { className: "py-20 bg-ink-900 relative overflow-hidden", children: [

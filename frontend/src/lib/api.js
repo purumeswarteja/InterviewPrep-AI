@@ -276,6 +276,13 @@ const analyzeResumeWithAI = async (payload) => {
   });
 };
 
+const optimizeResumeWithAI = async (payload) => {
+  return request("/api/ai/optimize-resume", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+};
+
 const evaluateInterviewWithAI = async (payload) => {
   return request("/api/ai/evaluate-interview", {
     method: "POST",
@@ -331,6 +338,7 @@ export const api = {
   deleteSession,
   createResumeAnalysis,
   analyzeResumeWithAI,
+  optimizeResumeWithAI,
   evaluateInterviewWithAI,
   generateNextQuestion,
   generateHRQuestion,

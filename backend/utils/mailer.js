@@ -110,9 +110,6 @@ export const sendOtpEmail = async (toEmail, otp, type = 'signup') => {
 
   const textContent = `${title}\n\n${description}\n\nYour Verification Code: ${otp}\n(This code expires in 10 minutes)\n\nSecurity Notice: If you did not request this, please ignore this email.`;
 
-  // Print OTP to terminal so local developers can verify without waiting for email delivery
-  console.log(`🔐 [AUTH OTP] (${type}) Verification Code for ${toEmail}: ${otp}`);
-
   try {
     const resend = getResendClient();
     // Resend sandbox (onboarding@resend.dev) requires test/mock emails to use delivered@resend.dev
@@ -128,11 +125,7 @@ export const sendOtpEmail = async (toEmail, otp, type = 'signup') => {
     });
 
     if (error) {
-      console.error(`❌ Resend API returned an error for ${toEmail}:`, error.message || error);
-      // In local development, if Resend sandbox restricts to account owner's email, allow dev flow to proceed
       if (error.message?.includes('You can only send testing emails to your own email address')) {
-        console.warn(`⚠️ [Resend Sandbox Restriction]: To send to external emails, verify a custom domain at resend.com/domains.`);
-        console.warn(`💡 Development fallback: OTP for ${toEmail} is [${otp}].`);
         return { success: true, messageId: `dev-sandbox-${Date.now()}`, isSandboxFallback: true };
       }
       throw new Error(error.message || 'Failed to dispatch email through Resend.');
@@ -142,15 +135,11 @@ export const sendOtpEmail = async (toEmail, otp, type = 'signup') => {
       throw new Error('Resend did not return a message confirmation ID.');
     }
 
-    console.log(`📧 OTP email successfully dispatched via Resend to ${toEmail} [ID: ${data.id}]`);
     return { success: true, messageId: data.id };
   } catch (err) {
     if (err.message?.includes('You can only send testing emails to your own email address')) {
-      console.warn(`⚠️ [Resend Sandbox Restriction]: To send to external emails, verify a custom domain at resend.com/domains.`);
-      console.warn(`💡 Development fallback: OTP for ${toEmail} is [${otp}].`);
       return { success: true, messageId: `dev-sandbox-${Date.now()}`, isSandboxFallback: true };
     }
-    console.error(`❌ Resend Delivery Error (${toEmail}):`, err.message);
     throw new Error(`Email delivery failed: ${err.message}`);
   }
 };
@@ -222,10 +211,8 @@ export const sendWeeklyGoalReachedEmail = async (toEmail, { name = 'there', week
       text: `Congratulations ${name}! You reached your weekly interview goal of ${weeklyGoal} sessions!`,
     });
     if (error) {
-      console.warn('Resend goal email warning:', error.message || error);
       return { success: false, error: error.message };
     }
-    console.log(`📧 Weekly goal notification sent to ${toEmail} [ID: ${data?.id}]`);
     return { success: true, messageId: data?.id };
   } catch (err) {
     console.warn(`Resend goal email error (${toEmail}):`, err.message);
@@ -321,10 +308,8 @@ export const sendDailyPracticeReminderEmail = async (toEmail, { name = 'there', 
       text: `Hey ${name}!\n\nJust a quick reminder to practice today.\n\nTip: ${selectedTip.title}\n${selectedTip.content}\n\nLog in today to continue your practice!`,
     });
     if (error) {
-      console.warn('Resend reminder email warning:', error.message || error);
       return { success: false, error: error.message };
     }
-    console.log(`📧 Daily practice reminder sent to ${toEmail} [ID: ${data?.id}]`);
     return { success: true, messageId: data?.id };
   } catch (err) {
     console.warn(`Resend reminder email error (${toEmail}):`, err.message);

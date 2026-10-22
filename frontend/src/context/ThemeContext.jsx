@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { api } from "../lib/api";
 
@@ -11,6 +12,8 @@ const ThemeContext = createContext({
 
 export function ThemeProvider({ children }) {
   const { profile, user } = useAuth();
+  const location = useLocation();
+  const isAppRoute = location.pathname.startsWith("/app");
 
   const [theme, setThemeState] = useState(() => {
     try {
@@ -37,13 +40,17 @@ export function ThemeProvider({ children }) {
     try {
       localStorage.setItem("app_theme", mode);
     } catch (_) {}
-    applyTheme(mode);
+    
+    // Only apply light mode if user is currently inside /app
+    if (location.pathname.startsWith("/app")) {
+      applyTheme(mode);
+    }
 
     // Sync with backend profile if authenticated
     if (user?.id) {
       api.updateProfile({ theme: mode }).catch(() => {});
     }
-  }, [applyTheme, user?.id]);
+  }, [applyTheme, user?.id, location.pathname]);
 
   const toggleTheme = useCallback(() => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -55,18 +62,28 @@ export function ThemeProvider({ children }) {
       const localTheme = localStorage.getItem("app_theme");
       if (!localTheme) {
         setThemeState(profile.theme);
-        applyTheme(profile.theme);
+        if (location.pathname.startsWith("/app")) {
+          applyTheme(profile.theme);
+        }
         try {
           localStorage.setItem("app_theme", profile.theme);
         } catch (_) {}
       }
     }
-  }, [profile?.theme, applyTheme]);
+  }, [profile?.theme, applyTheme, location.pathname]);
 
-  // Apply on mount
+  // Route-aware theme application:
+  // Public & Auth routes (landing, login, register, etc.) are permanently DARK.
+  // Internal dashboard routes (/app/*) respect user's chosen theme (light or dark).
   useEffect(() => {
-    applyTheme(theme);
-  }, [theme, applyTheme]);
+    const root = document.documentElement;
+    if (!isAppRoute) {
+      root.classList.add("dark");
+      root.style.colorScheme = "dark";
+    } else {
+      applyTheme(theme);
+    }
+  }, [isAppRoute, theme, applyTheme]);
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, toggleTheme, isDark: theme === "dark" }}>

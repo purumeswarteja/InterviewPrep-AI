@@ -104,7 +104,7 @@ function ScoreRing({ score, size = 120 }) {
   const radius = size / 2 - 8;
   const circ = 2 * Math.PI * radius;
   const offset = circ - score / 100 * circ;
-  const color = score >= 80 ? "#16b079" : score >= 60 ? "#ff7d11" : "#ef4444";
+  const color = score >= 80 ? "#7c3aed" : score >= 60 ? "#ff7d11" : "#ef4444";
   return /* @__PURE__ */ jsxs("div", { className: "relative", style: { width: size, height: size }, children: [
     /* @__PURE__ */ jsxs("svg", { className: "transform -rotate-90", width: size, height: size, children: [
       /* @__PURE__ */ jsx("circle", { cx: size / 2, cy: size / 2, r: radius, stroke: "#eceef2", strokeWidth: "8", fill: "none" }),
