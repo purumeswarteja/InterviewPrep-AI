@@ -239,7 +239,7 @@ export default function AppLayout() {
           </div>
         </header>
 
-        <main className="flex-1 p-6 lg:p-12 overflow-x-hidden">
+        <main className="flex-1 p-4 sm:p-6 lg:p-10 overflow-x-hidden">
           <Outlet />
         </main>
       </div>

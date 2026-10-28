@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "cron:reminders": "node cron-reminders.js"
   },
   "dependencies": {
     "@google/genai": "^2.25.0",

@@ -744,7 +744,7 @@ export default function SettingsPage() {
 
       {/* ─── Notifications Card (Only the 3 specific items) ─────────────── */}
       <Card>
-        <h2 className="font-display font-semibold text-lg text-ink-900 mb-4 flex items-center gap-2">
+        <h2 className="font-display font-semibold text-lg text-ink-900 dark:text-ink-100 mb-4 flex items-center gap-2">
           <Clock className="w-5 h-5 text-sky-500" />
           <span>Notifications</span>
         </h2>
@@ -753,29 +753,32 @@ export default function SettingsPage() {
             const Icon = t.icon;
             const isEnabled = Boolean(notifications[t.key]);
             return (
-              <div key={t.key} className="flex items-start justify-between p-3.5 rounded-xl border border-ink-100 gap-3">
+              <div key={t.key} className="flex items-start justify-between p-3.5 rounded-xl border border-ink-100 dark:border-ink-800 gap-3">
                 <div className="flex items-start gap-3">
                   <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5", t.color)}>
                     <Icon className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-ink-900">{t.label}</p>
-                    <p className="text-xs text-ink-500 leading-relaxed mt-0.5">{t.desc}</p>
+                    <p className="text-sm font-semibold text-ink-900 dark:text-ink-100">{t.label}</p>
+                    <p className="text-xs text-ink-500 dark:text-ink-400 leading-relaxed mt-0.5">{t.desc}</p>
                   </div>
                 </div>
                 <button
                   type="button"
+                  role="switch"
+                  aria-checked={isEnabled}
                   onClick={() => handleToggleNotification(t.key)}
                   className={cn(
-                    "relative w-11 h-6 rounded-full transition-colors cursor-pointer shrink-0 mt-1",
-                    isEnabled ? "bg-brand-500" : "bg-ink-200"
+                    "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-ink-900 mt-1",
+                    isEnabled ? "bg-brand-500" : "bg-ink-200 dark:bg-ink-700"
                   )}
                   title={`Toggle ${t.label}`}
                 >
                   <span
+                    aria-hidden="true"
                     className={cn(
-                      "absolute top-0.5 w-5 h-5 rounded-full !bg-white transition-transform shadow-sm",
-                      isEnabled ? "translate-x-5" : "translate-x-0.5"
+                      "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out",
+                      isEnabled ? "translate-x-5" : "translate-x-0"
                     )}
                   />
                 </button>

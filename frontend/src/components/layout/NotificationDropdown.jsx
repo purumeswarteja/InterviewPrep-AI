@@ -15,7 +15,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { cn } from "../../lib/utils";
+import { cn, timeAgo } from "../../lib/utils";
 
 const getDefaultNotifications = (profile) => [
   {
@@ -133,6 +133,47 @@ export default function NotificationDropdown() {
     }
   }, [notifications, storageKey]);
 
+  // Push a daily practice reminder once a day if not already pushed today
+  useEffect(() => {
+    if (!user) return;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const dailyReminderId = `notif-daily-reminder-${todayStr}`;
+
+    setNotifications((prev) => {
+      const alreadyHasToday = prev.some((n) => n.id === dailyReminderId);
+      if (alreadyHasToday) return prev;
+
+      const streak = profile?.streak_count || 0;
+      const todayReminder = {
+        id: dailyReminderId,
+        title: "Daily Practice Reminder 🎯",
+        message: streak > 0
+          ? `You have a ${streak}-day streak going! Take 5–10 minutes to complete today's practice session.`
+          : "Keep your interview readiness high! Complete a quick mock interview or aptitude exercise today.",
+        time: "Just now",
+        timestamp: Date.now(),
+        read: false,
+        category: "streak",
+        link: "/app/aptitude",
+        actionLabel: "Practice Now"
+      };
+
+      // If browser desktop notification permission is granted, also trigger native notification
+      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+        try {
+          new Notification(todayReminder.title, {
+            body: todayReminder.message,
+            icon: "/favicon.svg",
+          });
+        } catch (err) {
+          console.warn("Desktop notification trigger failed:", err);
+        }
+      }
+
+      return [todayReminder, ...prev];
+    });
+  }, [user, profile?.streak_count]);
+
   // Click outside and Escape key listener
   useEffect(() => {
     if (!isOpen) return;
@@ -228,7 +269,7 @@ export default function NotificationDropdown() {
       {/* Dropdown Box */}
       {isOpen && (
         <div
-          className="absolute right-0 mt-2 w-80 sm:w-96 card-surface overflow-hidden shadow-2xl z-50 animate-fade-down border border-ink-200 dark:border-ink-800"
+          className="absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-2rem)] card-surface overflow-hidden shadow-2xl z-50 animate-fade-down border border-ink-200 dark:border-ink-800"
           style={{ maxHeight: "calc(100vh - 100px)" }}
         >
           {/* Header */}
@@ -351,7 +392,7 @@ export default function NotificationDropdown() {
 
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-[11px] text-ink-400 dark:text-ink-500">
-                          {item.time}
+                          {item.timestamp ? timeAgo(new Date(item.timestamp).toISOString()) : item.time}
                         </span>
 
                         {item.link && (

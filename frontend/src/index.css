@@ -152,7 +152,13 @@ html.dark .text-gray-400 {
 
 /* Invert hardcoded dark text colors in dark mode */
 html.dark [style*="color: #0c0f1a"],
-html.dark [style*="color:#0c0f1a"] {
+html.dark [style*="color:#0c0f1a"],
+html.dark [style*="color: rgb(12, 15, 26)"],
+html.dark [style*="color:rgb(12, 15, 26)"],
+html.dark [style*="color: #5d6880"],
+html.dark [style*="color:#5d6880"],
+html.dark [style*="color: rgb(93, 104, 128)"],
+html.dark [style*="color:rgb(93, 104, 128)"] {
   color: #f6f7f9 !important;
 }
 

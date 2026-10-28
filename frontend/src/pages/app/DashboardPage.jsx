@@ -149,10 +149,10 @@ export default function DashboardPage() {
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-bold text-2xl sm:text-3xl" style={{ color: '#0c0f1a', fontFamily: 'Space Grotesk, Inter, sans-serif' }}>
+          <h1 className="font-display font-bold text-2xl sm:text-3xl text-gray-900 dark:text-white">
             Welcome back, {firstName}! 👋
           </h1>
-          <p className="text-gray-500 mt-1 text-base">Ready to sharpen your interview skills today?</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-base">Ready to sharpen your interview skills today?</p>
         </div>
         {profile?.streak_count > 0 && (
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl border font-semibold text-sm"
@@ -247,7 +247,7 @@ export default function DashboardPage() {
 
       {/* ── Quick Actions ── */}
       <div>
-        <h2 className="font-bold text-lg mb-4" style={{ color: '#0c0f1a', fontFamily: 'Space Grotesk, Inter, sans-serif' }}>
+        <h2 className="font-display font-bold text-lg mb-4 text-gray-900 dark:text-white">
           Quick Actions
         </h2>
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -280,7 +280,7 @@ export default function DashboardPage() {
         <div className={profile && profile.avg_score > 0 ? "lg:col-span-2" : "col-span-1"}>
           <div className="card-surface p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-bold text-lg" style={{ color: '#0c0f1a', fontFamily: 'Space Grotesk, Inter, sans-serif' }}>
+              <h2 className="font-display font-bold text-lg text-gray-900 dark:text-white">
                 Recent Sessions
               </h2>
               <Link to="/app/history"
@@ -324,16 +324,16 @@ export default function DashboardPage() {
                   return (
                     <div key={s.id}
                       onClick={() => setSelectedSession(s)}
-                      className="flex items-center gap-4 p-3.5 rounded-xl border border-transparent hover:border-gray-200 hover:bg-gray-50 transition-all cursor-pointer group">
+                      className="flex items-center gap-4 p-3.5 rounded-xl border border-transparent hover:border-gray-200 dark:hover:border-ink-800 hover:bg-gray-50 dark:hover:bg-ink-800/50 transition-all cursor-pointer group">
                       <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
                         style={{ background: tc.bg }}>
                         <SessionIcon className="w-5 h-5" style={{ color: tc.icon }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate group-hover:text-violet-700 transition-colors" style={{ color: '#0c0f1a' }}>
+                        <p className="font-semibold text-sm truncate text-gray-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
                           {s.skill || s.topic || 'Practice'}
                         </p>
-                        <div className="flex items-center gap-3 mt-0.5 text-xs" style={{ color: '#5d6880' }}>
+                        <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                           <span className="capitalize">{s.type} interview</span>
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
@@ -366,11 +366,11 @@ export default function DashboardPage() {
         {profile && profile.avg_score > 0 && (
           <div className="space-y-5">
             <div className="card-surface p-5 flex flex-col items-center text-center">
-              <h3 className="font-bold text-base mb-4" style={{ color: '#0c0f1a', fontFamily: 'Space Grotesk, Inter, sans-serif' }}>
+              <h3 className="font-display font-bold text-base mb-4 text-gray-900 dark:text-white">
                 Your Performance
               </h3>
               <ScoreRing score={profile.avg_score} size={120} />
-              <p className="text-sm mt-3" style={{ color: '#5d6880' }}>
+              <p className="text-sm mt-3 text-gray-500 dark:text-gray-400">
                 {profile.avg_score >= 80 ? '🎉 Excellent work!' : profile.avg_score >= 60 ? '📈 Good progress!' : '💪 Keep practicing!'}
               </p>
             </div>

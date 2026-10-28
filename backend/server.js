@@ -7,6 +7,20 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 dotenv.config();
 
+// Silence terminal logs when SILENT_TERMINAL is enabled or in production deployment
+if (process.env.SILENT_TERMINAL === 'true' || process.env.NODE_ENV === 'production') {
+  const originalError = console.error;
+  console.log = () => {};
+  console.info = () => {};
+  console.warn = () => {};
+  console.debug = () => {};
+  console.error = (...args) => {
+    if (args[0] && (String(args[0]).includes('Uncaught Exception') || String(args[0]).includes('already in use'))) {
+      originalError(...args);
+    }
+  };
+}
+
 import dns from 'node:dns';
 dns.setDefaultResultOrder('ipv4first');
 import express from 'express';
@@ -246,11 +260,16 @@ async function runDailyInactivityAndReminderCheck() {
       }
 
       // 2. Practice reminder email if user hasn't logged in today
+      // Only dispatch during the scheduled reminder window (from 9:00 AM onwards)
+      const currentHour = new Date().getHours();
+      const reminderStartHour = parseInt(process.env.REMINDER_HOUR || '9', 10);
+      const isPastReminderHour = currentHour >= reminderStartHour;
+
       const wantsReminders = p.notifications?.practice_reminders !== false;
       const notLoggedInToday = p.last_active_date !== todayStr;
       const notSentToday = p.last_daily_reminder_date !== todayStr;
 
-      if (wantsReminders && notLoggedInToday && notSentToday) {
+      if (isPastReminderHour && wantsReminders && notLoggedInToday && notSentToday) {
         const user = await User.findOne({ id: p.user_id });
         if (user && user.email && user.isEmailVerified) {
           p.last_daily_reminder_date = todayStr;
@@ -266,9 +285,8 @@ async function runDailyInactivityAndReminderCheck() {
   }
 }
 
-// Background checker for daily inactivity and reminders (runs every 30 minutes)
+// Background checker for daily inactivity and reminders (runs every 30 minutes in background)
 setInterval(runDailyInactivityAndReminderCheck, 30 * 60 * 1000);
-setTimeout(runDailyInactivityAndReminderCheck, 10 * 1000);
 
 // Login
 app.post('/api/auth/login', async (req, res) => {
@@ -2607,6 +2625,26 @@ app.post('/api/password-reset', async (req, res) => {
   const user = await User.findOne({ email: email.toLowerCase() });
   if (!user) return res.status(200).json({ message: 'If that email exists, a reset link has been sent.' });
   res.json({ message: 'Password reset request received. (Not implemented in mock backend)' });
+});
+
+// ─── Automated Cron Endpoint for Daily Reminders ───────────────────────────
+// Can be called by external schedulers (cron-job.org, GitHub Actions, system cron)
+app.all('/api/cron/daily-reminders', async (req, res) => {
+  try {
+    const cronSecret = process.env.CRON_SECRET;
+    const providedSecret = req.headers['x-cron-secret'] || req.query.secret;
+    if (cronSecret && providedSecret !== cronSecret) {
+      return res.status(401).json({ error: 'Unauthorized: Invalid cron secret' });
+    }
+
+    const { sendDailyReminders } = await import('./cron-reminders.js');
+    const force = req.query.force === 'true';
+    const summary = await sendDailyReminders({ force });
+    res.json({ success: true, summary });
+  } catch (err) {
+    console.error('Error running daily reminders via endpoint:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ─── Notification Test Endpoints ──────────────────────────────────────────────
