@@ -6,8 +6,8 @@ import { sendDailyPracticeReminderEmail } from './utils/mailer.js';
 
 dotenv.config();
 
-// Silence console output when SILENT_TERMINAL is active or in production
-if (process.env.SILENT_TERMINAL === 'true' || process.env.NODE_ENV === 'production' || process.argv.includes('--silent')) {
+// Silence console output ONLY when SILENT_TERMINAL is active or --silent passed
+if (process.env.SILENT_TERMINAL === 'true' || process.argv.includes('--silent')) {
   console.log = () => {};
   console.info = () => {};
   console.warn = () => {};

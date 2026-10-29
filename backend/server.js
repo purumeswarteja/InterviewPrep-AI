@@ -7,8 +7,8 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 dotenv.config();
 
-// Silence terminal logs when SILENT_TERMINAL is enabled or in production deployment
-if (process.env.SILENT_TERMINAL === 'true' || process.env.NODE_ENV === 'production') {
+// Silence terminal logs ONLY when explicitly requested via SILENT_TERMINAL=true
+if (process.env.SILENT_TERMINAL === 'true') {
   const originalError = console.error;
   console.log = () => {};
   console.info = () => {};
@@ -49,6 +49,23 @@ const ai = new GoogleGenAI({ apiKey });
 
 app.use(cors());
 app.use(express.json());
+
+// ─── Health Check & Root Endpoints ───────────────────────────────────────────
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'InterviewPro AI Backend is operational',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString()
+  });
+});
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const generateNumericOtp = () => {
