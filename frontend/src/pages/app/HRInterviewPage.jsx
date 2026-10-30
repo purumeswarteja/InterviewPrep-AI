@@ -573,21 +573,27 @@ export default function HRInterviewPage() {
                     className={cn(
                       'p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3.5 cursor-pointer relative overflow-hidden',
                       isSelected
-                        ? 'border-violet-600 bg-violet-50/70 shadow-sm'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
+                        ? 'border-violet-600 bg-violet-50/70 dark:bg-violet-950/40 dark:border-violet-500 shadow-sm'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50 dark:border-ink-800 dark:hover:bg-ink-900/40'
                     )}
                   >
                     <div
                       className={cn(
                         'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5',
-                        isSelected ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-600'
+                        isSelected ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-600 dark:bg-ink-800 dark:text-gray-400'
                       )}
                     >
                       <Icon className="w-5 h-5" />
                     </div>
                     <div className="space-y-1">
-                      <p className="font-semibold text-sm text-gray-900">{topicItem.name}</p>
-                      <p className="text-xs text-gray-500 leading-relaxed">{topicItem.desc}</p>
+                      <p className={cn(
+                        "font-semibold text-sm",
+                        isSelected ? "text-violet-950 dark:text-white" : "text-gray-900 dark:text-gray-100"
+                      )}>{topicItem.name}</p>
+                      <p className={cn(
+                        "text-xs leading-relaxed",
+                        isSelected ? "text-violet-700/80 dark:text-gray-300" : "text-gray-500 dark:text-gray-400"
+                      )}>{topicItem.desc}</p>
                     </div>
                   </button>
                 );
@@ -944,12 +950,12 @@ export default function HRInterviewPage() {
 
               {/* AI Evaluation */}
               {evalObj.feedback && (
-                <div className="bg-violet-50/60 rounded-xl p-3.5 border border-violet-100">
-                  <p className="text-xs font-semibold text-violet-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                    <Check className="w-4 h-4 text-violet-600" />
+                <div className="bg-violet-50/60 dark:bg-violet-950/40 rounded-xl p-3.5 border border-violet-100 dark:border-violet-900/50">
+                  <p className="text-xs font-semibold text-violet-800 dark:text-violet-300 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                    <Check className="w-4 h-4 text-violet-600 dark:text-violet-400" />
                     AI HR Evaluation
                   </p>
-                  <p className="text-sm text-gray-800 leading-relaxed">
+                  <p className="text-sm text-gray-800 dark:text-slate-200 leading-relaxed">
                     {evalObj.feedback}
                   </p>
                 </div>

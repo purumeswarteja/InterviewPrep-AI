@@ -368,7 +368,7 @@ export default function ProfilePage() {
                   {form.skills.map((skill) => (
                     <span
                       key={skill}
-                      className="px-3 py-1 rounded-lg bg-violet-50 text-violet-800 text-xs font-semibold border border-violet-100"
+                      className="px-3 py-1 rounded-lg bg-violet-50 dark:bg-violet-950/40 text-violet-800 dark:text-violet-300 text-xs font-semibold border border-violet-100 dark:border-violet-800"
                     >
                       {skill}
                     </span>
@@ -583,7 +583,7 @@ export default function ProfilePage() {
                 {form.skills.map((s) => (
                   <span
                     key={s}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-50 text-violet-800 text-xs font-semibold border border-violet-100"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-50 dark:bg-violet-950/40 text-violet-800 dark:text-violet-300 text-xs font-semibold border border-violet-100 dark:border-violet-800"
                   >
                     <span>{s}</span>
                     <button

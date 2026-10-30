@@ -114,13 +114,14 @@ function getSessionSummary(session) {
 }
 
 export default function DashboardPage() {
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState(null);
 
   useEffect(() => {
     if (user) {
+      if (refreshProfile) refreshProfile();
       api.getSessions().then((response) => {
         if (!response.error) setSessions(response.sessions || []);
         setLoading(false);
@@ -139,8 +140,13 @@ export default function DashboardPage() {
   }).length;
 
   const weeklyGoal = profile?.weekly_goal || 5;
-  const avgScore = profile?.avg_score ? Math.round(profile.avg_score) : null;
-  const totalInterviews = profile?.total_interviews || 0;
+  const scoredSessions = sessions.filter((s) => s.score !== null && s.score !== undefined && !isNaN(Number(s.score)));
+  const avgScore = loading
+    ? (profile?.avg_score ? Math.round(profile.avg_score) : null)
+    : (scoredSessions.length
+        ? Math.round(scoredSessions.reduce((sum, s) => sum + Number(s.score || 0), 0) / scoredSessions.length)
+        : null);
+  const totalInterviews = loading ? (profile?.total_interviews || 0) : sessions.length;
   const bestStreak = profile?.longest_streak || 0;
 
   return (
@@ -274,10 +280,10 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Bottom Grid: Recent Sessions + Performance ── */}
-      <div className={cn("grid gap-6", profile && profile.avg_score > 0 ? "lg:grid-cols-3" : "grid-cols-1")}>
+      <div className={cn("grid gap-6", avgScore !== null && avgScore > 0 ? "lg:grid-cols-3" : "grid-cols-1")}>
 
         {/* Recent Sessions */}
-        <div className={profile && profile.avg_score > 0 ? "lg:col-span-2" : "col-span-1"}>
+        <div className={avgScore !== null && avgScore > 0 ? "lg:col-span-2" : "col-span-1"}>
           <div className="card-surface p-6">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-display font-bold text-lg text-gray-900 dark:text-white">
@@ -363,15 +369,15 @@ export default function DashboardPage() {
         </div>
 
         {/* Performance Ring */}
-        {profile && profile.avg_score > 0 && (
+        {avgScore !== null && avgScore > 0 && (
           <div className="space-y-5">
             <div className="card-surface p-5 flex flex-col items-center text-center">
               <h3 className="font-display font-bold text-base mb-4 text-gray-900 dark:text-white">
                 Your Performance
               </h3>
-              <ScoreRing score={profile.avg_score} size={120} />
+              <ScoreRing score={avgScore} size={120} />
               <p className="text-sm mt-3 text-gray-500 dark:text-gray-400">
-                {profile.avg_score >= 80 ? '🎉 Excellent work!' : profile.avg_score >= 60 ? '📈 Good progress!' : '💪 Keep practicing!'}
+                {avgScore >= 80 ? '🎉 Excellent work!' : avgScore >= 60 ? '📈 Good progress!' : '💪 Keep practicing!'}
               </p>
             </div>
           </div>
@@ -469,9 +475,9 @@ export default function DashboardPage() {
                         </div>
 
                         {feedback && (
-                          <div className="bg-violet-50/70 rounded-xl p-3 border border-violet-100 text-xs text-violet-950">
-                            <p className="font-bold text-violet-800 mb-0.5">AI Feedback</p>
-                            <p className="text-gray-800 leading-relaxed">{feedback}</p>
+                          <div className="bg-violet-50/70 dark:bg-violet-950/40 rounded-xl p-3 border border-violet-100 dark:border-violet-900/50 text-xs text-violet-950 dark:text-violet-200">
+                            <p className="font-bold text-violet-800 dark:text-violet-300 mb-0.5">AI Feedback</p>
+                            <p className="text-gray-800 dark:text-slate-200 leading-relaxed">{feedback}</p>
                           </div>
                         )}
                       </div>

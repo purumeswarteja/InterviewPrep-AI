@@ -292,16 +292,16 @@ export default function ReasoningPage() {
                   className={cn(
                     'p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3 cursor-pointer',
                     mode === key
-                      ? 'border-violet-600 bg-violet-50/70 shadow-sm'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      ? 'border-violet-600 bg-violet-50/70 shadow-sm dark:bg-violet-950/40 dark:border-violet-500'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 dark:border-ink-800 dark:hover:bg-ink-900/40'
                   )}
                 >
-                  <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0', mode === key ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-500')}>
+                  <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0', mode === key ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-500 dark:bg-ink-800 dark:text-gray-400')}>
                     <Icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm text-gray-900">{title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
+                    <p className={cn("font-semibold text-sm", mode === key ? "text-violet-950 dark:text-white" : "text-gray-900 dark:text-gray-100")}>{title}</p>
+                    <p className={cn("text-xs mt-0.5", mode === key ? "text-violet-700/80 dark:text-gray-300" : "text-gray-500 dark:text-gray-400")}>{desc}</p>
                   </div>
                 </button>
               ))}
@@ -383,18 +383,18 @@ export default function ReasoningPage() {
                     type="button"
                     onClick={() => { setSelectedTopicId(topicItem.id); setValidationError(''); }}
                     className={cn(
-                      'p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3.5 cursor-pointer',
+                      'p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3.5 cursor-pointer relative overflow-hidden',
                       isSelected
-                        ? 'border-violet-600 bg-violet-50/70 shadow-sm'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
+                        ? 'border-violet-600 bg-violet-50/70 shadow-sm dark:bg-violet-950/40 dark:border-violet-500'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50 dark:border-ink-800 dark:hover:bg-ink-900/40'
                     )}
                   >
-                    <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5', isSelected ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-600')}>
+                    <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5', isSelected ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-600 dark:bg-ink-800 dark:text-gray-400')}>
                       <Icon className="w-5 h-5" />
                     </div>
                     <div className="space-y-1">
-                      <p className="font-semibold text-sm text-gray-900">{topicItem.name}</p>
-                      <p className="text-xs text-gray-500 leading-relaxed">{topicItem.desc}</p>
+                      <p className={cn("font-semibold text-sm", isSelected ? "text-violet-950 dark:text-white" : "text-gray-900 dark:text-gray-100")}>{topicItem.name}</p>
+                      <p className={cn("text-xs leading-relaxed", isSelected ? "text-violet-700/80 dark:text-gray-300" : "text-gray-500 dark:text-gray-400")}>{topicItem.desc}</p>
                     </div>
                   </button>
                 );
@@ -504,11 +504,11 @@ export default function ReasoningPage() {
                   className={cn(
                     'w-full p-4 rounded-xl border-2 text-left transition-all flex items-center gap-3.5 cursor-pointer',
                     isSelected
-                      ? 'border-violet-600 bg-violet-50 text-violet-900 font-medium shadow-sm'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-800'
+                      ? 'border-violet-600 bg-violet-50 text-violet-900 font-medium shadow-sm dark:bg-violet-950/50 dark:border-violet-500 dark:text-violet-200'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-800 dark:border-ink-800 dark:hover:bg-ink-900/40 dark:text-gray-200'
                   )}
                 >
-                  <span className={cn('w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0', isSelected ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-600')}>
+                  <span className={cn('w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0', isSelected ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-600 dark:bg-ink-800 dark:text-gray-400')}>
                     {optKey}
                   </span>
                   <span className="text-sm flex-1 leading-relaxed">{optText}</span>
@@ -519,23 +519,23 @@ export default function ReasoningPage() {
 
           {/* Practice Mode Explanation */}
           {mode === 'practice' && (
-            <div className="pt-3 border-t border-gray-100 space-y-3">
+            <div className="pt-3 border-t border-gray-100 dark:border-ink-800 space-y-3">
               <button
                 type="button"
                 onClick={() => setShowExplanationMap((prev) => ({ ...prev, [currentIdx]: !prev[currentIdx] }))}
-                className="inline-flex items-center gap-2 text-xs font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 px-3 py-1.5 rounded-lg transition"
+                className="inline-flex items-center gap-2 text-xs font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 px-3 py-1.5 rounded-lg transition dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800 dark:hover:bg-violet-900/40"
               >
-                <Lightbulb className="w-3.5 h-3.5 text-violet-600" />
+                <Lightbulb className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
                 <span>{showExplanationMap[currentIdx] ? 'Hide Explanation' : 'Show Step-by-Step Explanation'}</span>
               </button>
 
               {showExplanationMap[currentIdx] && (
-                <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-xl space-y-1.5 text-xs text-amber-950 animate-fade-in">
-                  <p className="font-bold flex items-center gap-1.5 text-amber-900">
-                    <Check className="w-4 h-4 text-violet-600" />
+                <div className="p-4 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl space-y-1.5 text-xs text-amber-950 dark:text-amber-200 animate-fade-in">
+                  <p className="font-bold flex items-center gap-1.5 text-amber-900 dark:text-amber-300">
+                    <Check className="w-4 h-4 text-violet-600 dark:text-violet-400" />
                     Correct Answer: Option {currentQ.correct_option}
                   </p>
-                  <p className="leading-relaxed">{currentQ.explanation}</p>
+                  <p className="leading-relaxed text-amber-950 dark:text-amber-100">{currentQ.explanation}</p>
                 </div>
               )}
             </div>

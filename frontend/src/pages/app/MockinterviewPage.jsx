@@ -478,7 +478,9 @@ export default function MockInterviewPage() {
                     onClick={() => setRole(r)}
                     className={cn(
                       'px-3 py-1.5 rounded-lg text-xs font-medium transition border',
-                      role === r ? 'bg-violet-100 text-violet-800 border-violet-300 font-bold' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                      role === r
+                        ? 'bg-violet-100 text-violet-800 border-violet-300 font-bold dark:bg-violet-900/50 dark:text-violet-200 dark:border-violet-500'
+                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100 dark:bg-ink-800 dark:text-gray-300 dark:border-ink-700 dark:hover:bg-ink-700'
                     )}
                   >{r}</button>
                 ))}
@@ -494,7 +496,9 @@ export default function MockInterviewPage() {
                     onClick={() => setSkill(s)}
                     className={cn(
                       'px-3 py-1.5 rounded-lg text-xs font-medium transition border',
-                      skill.toLowerCase() === s.toLowerCase() ? 'bg-violet-100 text-violet-800 border-violet-300 font-bold' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                      skill.toLowerCase() === s.toLowerCase()
+                        ? 'bg-violet-100 text-violet-800 border-violet-300 font-bold dark:bg-violet-900/50 dark:text-violet-200 dark:border-violet-500'
+                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100 dark:bg-ink-800 dark:text-gray-300 dark:border-ink-700 dark:hover:bg-ink-700'
                     )}
                   >{s}</button>
                 ))}
@@ -789,12 +793,12 @@ export default function MockInterviewPage() {
               </div>
 
               {actualAnswerText && (
-                <div className="bg-blue-50/70 rounded-xl p-4 border border-blue-200/80 space-y-1.5 text-blue-950">
-                  <p className="text-xs font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                <div className="bg-blue-50/70 dark:bg-blue-950/40 rounded-xl p-4 border border-blue-200/80 dark:border-blue-900/60 space-y-1.5 text-blue-950 dark:text-blue-100">
+                  <p className="text-xs font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     Actual Answer / Solution
                   </p>
-                  <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">{actualAnswerText}</p>
+                  <p className="text-sm text-gray-800 dark:text-slate-200 leading-relaxed whitespace-pre-line">{actualAnswerText}</p>
                 </div>
               )}
             </Card>

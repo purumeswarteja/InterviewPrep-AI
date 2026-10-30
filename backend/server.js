@@ -210,6 +210,31 @@ app.post('/api/auth/signup', async (req, res) => {
 });
 
 // ─── Daily Login Streak Logic ────────────────────────────────────────────────
+async function recalculateUserProfileStats(userId) {
+  try {
+    const allSessions = await InterviewSession.find({ user_id: userId });
+    const scoredSessions = allSessions.filter(
+      (s) => s.score !== null && s.score !== undefined && !isNaN(Number(s.score))
+    );
+    const avg_score = scoredSessions.length
+      ? scoredSessions.reduce((sum, s) => sum + Number(s.score), 0) / scoredSessions.length
+      : 0;
+
+    return await Profile.findOneAndUpdate(
+      { user_id: userId },
+      {
+        total_interviews: allSessions.length,
+        avg_score,
+        updated_at: new Date().toISOString(),
+      },
+      { returnDocument: 'after' }
+    );
+  } catch (err) {
+    console.error('Error in recalculateUserProfileStats:', err);
+    return null;
+  }
+}
+
 async function updateDailyLoginStreak(userId) {
   try {
     let profile = await Profile.findOne({ user_id: userId });
@@ -1182,6 +1207,7 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
       profile = await Profile.create({ user_id: req.user.userId });
     }
     profile = (await updateDailyLoginStreak(req.user.userId)) || profile;
+    profile = (await recalculateUserProfileStats(req.user.userId)) || profile;
     res.json({
       user: {
         id: req.user.userId,
@@ -1377,21 +1403,8 @@ app.post('/api/sessions', authMiddleware, async (req, res) => {
     });
 
     // Update profile stats
+    const updatedProfile = await recalculateUserProfileStats(req.user.userId);
     const allSessions = await InterviewSession.find({ user_id: req.user.userId });
-    const scoredSessions = allSessions.filter((s) => s.score !== null);
-    const avg_score = scoredSessions.length
-      ? scoredSessions.reduce((sum, s) => sum + Number(s.score), 0) / scoredSessions.length
-      : 0;
-
-    const updatedProfile = await Profile.findOneAndUpdate(
-      { user_id: req.user.userId },
-      {
-        total_interviews: allSessions.length,
-        avg_score,
-        updated_at: new Date().toISOString(),
-      },
-      { returnDocument: 'after' }
-    );
 
     // Check weekly goal notification
     if (updatedProfile && updatedProfile.weekly_goal > 0) {
@@ -1432,7 +1445,16 @@ app.delete('/api/sessions/:id', authMiddleware, async (req, res) => {
       user_id: req.user.userId,
     });
     if (!result) return res.status(404).json({ error: 'Session not found' });
-    res.json({ success: true });
+
+    // Recalculate profile stats after deleting the session
+    const updatedProfile = await recalculateUserProfileStats(req.user.userId);
+
+    res.json({
+      success: true,
+      profile: updatedProfile,
+      avg_score: updatedProfile?.avg_score || 0,
+      total_interviews: updatedProfile?.total_interviews || 0,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

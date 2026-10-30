@@ -60,7 +60,7 @@ function getSessionSummary(session) {
 }
 
 export default function HistoryPage() {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const [sessions, setSessions] = useState([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -85,6 +85,9 @@ export default function HistoryPage() {
     } else {
       setSessions((prev) => prev.filter((s) => s.id !== id));
       if (selected?.id === id) setSelected(null);
+      if (refreshProfile) {
+        await refreshProfile();
+      }
       toast.success('Session deleted.');
     }
   };
@@ -304,9 +307,9 @@ export default function HistoryPage() {
                         </div>
 
                         {feedback && (
-                          <div className="bg-violet-50/70 rounded-xl p-3 border border-violet-100 text-xs text-violet-950">
-                            <p className="font-bold text-violet-800 mb-0.5">AI Feedback</p>
-                            <p className="text-gray-800 leading-relaxed">{feedback}</p>
+                          <div className="bg-violet-50/70 dark:bg-violet-950/40 rounded-xl p-3 border border-violet-100 dark:border-violet-900/50 text-xs text-violet-950 dark:text-violet-200">
+                            <p className="font-bold text-violet-800 dark:text-violet-300 mb-0.5">AI Feedback</p>
+                            <p className="text-gray-800 dark:text-slate-200 leading-relaxed">{feedback}</p>
                           </div>
                         )}
                       </div>
